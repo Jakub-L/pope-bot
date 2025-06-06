@@ -1,0 +1,28 @@
+{
+  "name": "pope-bot",
+  "version": "0.1.0",
+  "description": "Small Discord bot for my personal server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Jakub-L/pope-bot.git"
+  },
+  "keywords": [
+    "discord",
+    "pope",
+    "fun",
+    "bot"
+  ],
+  "author": "Jakub L.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Jakub-L/pope-bot/issues"
+  },
+  "homepage": "https://github.com/Jakub-L/pope-bot#readme",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
