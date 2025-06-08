@@ -1,17 +1,26 @@
 import "dotenv/config";
-import { Cloudflare } from "cloudflare";
 import { Client, Events, GatewayIntentBits } from "discord.js";
+import { DatabaseConnection } from "./utils/database";
 
-const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, DISCORD_TOKEN } = process.env;
+const { DISCORD_TOKEN } = process.env;
 
-const cloudflareClient = new Cloudflare({
-  apiToken: CLOUDFLARE_API_TOKEN
+const database = new DatabaseConnection();
+const discordClient = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessages
+  ]
 });
-const discordClient = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 discordClient.once(Events.ClientReady, async (readyClient: Client) => {
   console.log(`Ready! Logged in as ${readyClient.user?.tag}`);
-  console.log(await cloudflareClient.d1.database.list({ account_id: CLOUDFLARE_ACCOUNT_ID! }));
+  console.log(await database.getRecentImages());
+});
+
+discordClient.on(Events.MessageCreate, async message => {
+  console.log(message.attachments);
+  console.log(message.embeds);
 });
 
 discordClient.login(DISCORD_TOKEN);
