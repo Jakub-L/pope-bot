@@ -1,12 +1,17 @@
 import "dotenv/config";
+import { Cloudflare } from "cloudflare";
 import { Client, Events, GatewayIntentBits } from "discord.js";
 
-const { DISCORD_TOKEN } = process.env;
+const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, DISCORD_TOKEN } = process.env;
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const cloudflareClient = new Cloudflare({
+  apiToken: CLOUDFLARE_API_TOKEN
+});
+const discordClient = new Client({ intents: [GatewayIntentBits.Guilds] });
 
-client.once(Events.ClientReady, (readyClient: Client) => {
+discordClient.once(Events.ClientReady, async (readyClient: Client) => {
   console.log(`Ready! Logged in as ${readyClient.user?.tag}`);
+  console.log(await cloudflareClient.d1.database.list({ account_id: CLOUDFLARE_ACCOUNT_ID! }));
 });
 
-client.login(DISCORD_TOKEN);
+discordClient.login(DISCORD_TOKEN);
