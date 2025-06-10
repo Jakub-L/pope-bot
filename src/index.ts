@@ -13,14 +13,17 @@ const discordClient = new Client({
   ]
 });
 
-discordClient.once(Events.ClientReady, async (readyClient: Client) => {
-  console.log(`Ready! Logged in as ${readyClient.user?.tag}`);
-  console.log(await database.getRecentImages());
-});
-
 discordClient.on(Events.MessageCreate, async message => {
-  console.log(message.attachments);
-  console.log(message.embeds);
+  const { content, embeds, attachments, author } = message;
+  if (author.bot) return;
+
+  const links: Set<string> = new Set([
+    ...embeds.map(embed => embed.url).filter(url => url !== null),
+    ...attachments.map(attachment => attachment.url).filter(Boolean),
+    ...(content.match(/https?:\/\/[^\s]+/g) || [])
+  ]);
+
+  console.log(`Received message from ${author.tag}: ${Array.from(links).join(", ")}`);
 });
 
 discordClient.login(DISCORD_TOKEN);

@@ -1,6 +1,6 @@
 export type Image = {
   id: string;
   phash: string;
-  posting_user: number;
-  posted_timestamp: string;
+  user_id: string;
+  timestamp: number;
 };
