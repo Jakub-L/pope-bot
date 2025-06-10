@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Client, Events, GatewayIntentBits } from "discord.js";
+import phash from "sharp-phash";
 import { DatabaseConnection } from "./utils/database";
 
 const { DISCORD_TOKEN } = process.env;
@@ -23,7 +24,15 @@ discordClient.on(Events.MessageCreate, async message => {
     ...(content.match(/https?:\/\/[^\s]+/g) || [])
   ]);
 
-  console.log(`Received message from ${author.tag}: ${Array.from(links).join(", ")}`);
+  for (const link of links) {
+    const response = await fetch(link, { method: "GET" });
+    const isImage = response.headers.get("content-type")?.startsWith("image/");
+    if (isImage) {
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const phashValue = await phash(buffer);
+    }
+  }
 });
 
 discordClient.login(DISCORD_TOKEN);
