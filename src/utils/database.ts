@@ -21,6 +21,23 @@ export class DatabaseConnection {
     });
   }
 
+  async addImage(image: Image): Promise<boolean> {
+    const response = await this._client.d1.database.query(CLOUDFLARE_DB_ID!, {
+      account_id: CLOUDFLARE_ACCOUNT_ID!,
+      sql: 'INSERT INTO "posted_images" ("id", "phash", "user_name", "guild_id", "channel_id", "message_id", "timestamp") VALUES (?, ?, ?, ?, ?, ?, ?)',
+      params: [
+        image.id,
+        image.phash,
+        image.user_name,
+        image.guild_id,
+        image.channel_id,
+        image.message_id,
+        image.timestamp.toString()
+      ]
+    });
+    return Boolean(response.result[0].success);
+  }
+
   /**
    * Retrieves the most recently posted images from the database.
    * @param {number} [limit=100] - Maximum number of images to retrieve
@@ -30,7 +47,7 @@ export class DatabaseConnection {
   async getRecentImages(limit: number = 100): Promise<Image[]> {
     const response = await this._client.d1.database.query(CLOUDFLARE_DB_ID!, {
       account_id: CLOUDFLARE_ACCOUNT_ID!,
-      sql: 'SELECT * from "posted-images" ORDER BY "posted_timestamp" DESC LIMIT ?',
+      sql: 'SELECT * from "posted_images" ORDER BY "timestamp" DESC LIMIT ?',
       params: [limit.toString()]
     });
 
@@ -43,13 +60,13 @@ export class DatabaseConnection {
    * @returns {Promise<Image | undefined>} Promise that resolves to the Image object if found, undefined otherwise
    * @throws {Error} When database query fails or required environment variables are missing
    */
-  async getImageByPhash(phash: string): Promise<Image | undefined> {
+  async getImagesByPhash(phash: string): Promise<Image[]> {
     return (
       await this._client.d1.database.query(CLOUDFLARE_DB_ID!, {
         account_id: CLOUDFLARE_ACCOUNT_ID!,
-        sql: 'SELECT * from "posted-images" where "phash" = ?',
+        sql: 'SELECT * from "posted_images" where "phash" = ? ORDER BY "timestamp" ASC',
         params: [phash]
       })
-    ).result[0].results?.[0] as Image | undefined;
+    ).result[0].results as Image[];
   }
 }
