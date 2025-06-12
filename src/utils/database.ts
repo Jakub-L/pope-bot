@@ -62,7 +62,7 @@ export class Database {
           last_post_message_id,
           last_post_timestamp,
           count
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
         RETURNING *`,
         params: [
           `${update.guild_id}-${update.phash}`,
@@ -106,7 +106,6 @@ export class Database {
       })
     ).result[0].results?.[0] as Image;
   }
-
 
   private _buildWhereClause(filter: Partial<Image>): { whereClause: string; params: any[] } {
     const conditions: string[] = [];

@@ -1,5 +1,5 @@
-import { getLinkToMessage, getReply } from "./discord-message";
+import { getReply } from "./discord-message";
 import { Database } from "./database";
 import { formatDiff } from "./datetime";
 
-export { Database, getLinkToMessage, getReply, formatDiff };
+export { Database, getReply, formatDiff };

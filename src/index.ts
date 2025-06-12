@@ -2,11 +2,11 @@ import "dotenv/config";
 import { Client, Events, GatewayIntentBits } from "discord.js";
 import phash from "sharp-phash";
 
-import { DatabaseConnection, getReply } from "./utils";
+import { Database, getReply } from "./utils";
 
 const { DISCORD_TOKEN } = process.env;
 
-const database = new DatabaseConnection();
+const db = new Database();
 const discordClient = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -35,18 +35,26 @@ discordClient.on(Events.MessageCreate, async message => {
       const buffer = Buffer.from(arrayBuffer);
       const phashValue = await phash(buffer);
 
-      const images = await database.getImagesByPhash(phashValue);
-      if (images.length > 0) message.reply({ content: getReply(images) });
-
-      await database.addImage({
-        id: crypto.randomUUID(),
+      const images = await db.getImages({
         phash: phashValue,
-        user_name: author.globalName || author.username,
+        guild_id: message.guild?.id || "0"
+      });
+
+      const update = {
+        phash: phashValue,
         guild_id: message.guild?.id || "0",
+        user_name: author.globalName || author.username,
         channel_id: message.channel.id,
         message_id: message.id,
         timestamp: Date.now()
-      });
+      };
+
+      if (images.length > 0) {
+        // message.reply({
+        //   content: getReply(images[0])
+        // })
+        await db.updateImage(update);
+      } else await db.addImage(update);
     }
   }
 });
