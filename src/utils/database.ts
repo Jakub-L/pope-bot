@@ -107,6 +107,13 @@ export class Database {
     ).result[0].results?.[0] as Image;
   }
 
+  async deleteAllImages(): Promise<void> {
+    await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
+      account_id: CLOUDFLARE_ACCOUNT_ID,
+      sql: `DELETE FROM images`
+    });
+  }
+
   private _buildWhereClause(filter: Partial<Image>): { whereClause: string; params: any[] } {
     const conditions: string[] = [];
     const params: any[] = [];
