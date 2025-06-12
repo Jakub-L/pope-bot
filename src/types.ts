@@ -12,3 +12,12 @@ export type Image = {
   last_post_timestamp: number;
   count: number;
 };
+
+export type ImageUpdate = {
+  phash: string;
+  guild_id: string;
+  user_name: string;
+  channel_id: string;
+  message_id: string;
+  timestamp: number;
+};

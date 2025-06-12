@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { Cloudflare } from "cloudflare";
 
-import type { Image } from "../types";
+import type { Image, ImageUpdate } from "../types";
 
 const {
   CLOUDFLARE_API_TOKEN,
@@ -35,11 +35,78 @@ export class Database {
     return ((
       await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
         account_id: CLOUDFLARE_ACCOUNT_ID,
-        sql: `SELECT * FROM images ${whereClause} ORDER BY first_post_timestamp DESC`,
+        sql: `
+          SELECT * FROM images
+          ${whereClause}
+          ORDER BY first_post_timestamp DESC`,
         params
       })
     ).result[0].results ?? []) as Image[];
   }
+
+  async addImage(update: ImageUpdate): Promise<Image> {
+    return (
+      await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
+        account_id: CLOUDFLARE_ACCOUNT_ID,
+        sql: `
+        INSERT INTO images (
+          id,
+          phash,
+          guild_id,
+          first_post_user_name,
+          first_post_channel_id,
+          first_post_message_id,
+          first_post_timestamp,
+          last_post_user_name,
+          last_post_channel_id,
+          last_post_message_id,
+          last_post_timestamp,
+          count
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        RETURNING *`,
+        params: [
+          `${update.guild_id}-${update.phash}`,
+          update.phash,
+          update.guild_id,
+          update.user_name,
+          update.channel_id,
+          update.message_id,
+          String(update.timestamp),
+          update.user_name,
+          update.channel_id,
+          update.message_id,
+          String(update.timestamp)
+        ]
+      })
+    ).result[0].results?.[0] as Image;
+  }
+
+  async updateImage(update: ImageUpdate): Promise<Image> {
+    return (
+      await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
+        account_id: CLOUDFLARE_ACCOUNT_ID,
+        sql: `
+        UPDATE images
+        SET
+          last_post_user_name = ?,
+          last_post_channel_id = ?,
+          last_post_message_id = ?,
+          last_post_timestamp = ?,
+          count = count + 1
+        WHERE id = ?
+        RETURNING *
+      `,
+        params: [
+          update.user_name,
+          update.channel_id,
+          update.message_id,
+          String(update.timestamp),
+          `${update.guild_id}-${update.phash}`
+        ]
+      })
+    ).result[0].results?.[0] as Image;
+  }
+
 
   private _buildWhereClause(filter: Partial<Image>): { whereClause: string; params: any[] } {
     const conditions: string[] = [];
