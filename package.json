@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsup src/index.ts --minify"
+    "build": "tsup src/index.ts --minify",
+    "populate-db": "tsx scripts/populate-db.ts"
   },
   "repository": {
     "type": "git",
