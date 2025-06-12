@@ -3,10 +3,19 @@ import { Cloudflare } from "cloudflare";
 
 import type { Image } from "../types";
 
-const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_DB_ID } = process.env;
+const {
+  CLOUDFLARE_API_TOKEN,
+  CLOUDFLARE_ACCOUNT_ID = "",
+  CLOUDFLARE_DB_ID = ""
+} = process.env;
+
+// TODO:
+// - Change the system to only store one phash per image
+// - Add a secondary table to store the first/last time an image was posted, and by whom
+// - Ensure the ID is per-server, not globally unique
 
 /** Database connection class for managing Cloudflare D1 database operations. */
-export class DatabaseConnection {
+export class Database {
   /** Private Cloudflare client instance for database operations. */
   private _client: Cloudflare;
 
@@ -21,52 +30,29 @@ export class DatabaseConnection {
     });
   }
 
-  async addImage(image: Image): Promise<boolean> {
-    const response = await this._client.d1.database.query(CLOUDFLARE_DB_ID!, {
-      account_id: CLOUDFLARE_ACCOUNT_ID!,
-      sql: 'INSERT INTO "posted_images" ("id", "phash", "user_name", "guild_id", "channel_id", "message_id", "timestamp") VALUES (?, ?, ?, ?, ?, ?, ?)',
-      params: [
-        image.id,
-        image.phash,
-        image.user_name,
-        image.guild_id,
-        image.channel_id,
-        image.message_id,
-        image.timestamp.toString()
-      ]
-    });
-    return Boolean(response.result[0].success);
-  }
-
-  /**
-   * Retrieves the most recently posted images from the database.
-   * @param {number} [limit=100] - Maximum number of images to retrieve
-   * @returns {Promise<Image[]>} Promise that resolves to an array of Image objects ordered by posted timestamp (newest first)
-   * @throws {Error} When database query fails or required environment variables are missing
-   */
-  async getRecentImages(limit: number = 100): Promise<Image[]> {
-    const response = await this._client.d1.database.query(CLOUDFLARE_DB_ID!, {
-      account_id: CLOUDFLARE_ACCOUNT_ID!,
-      sql: 'SELECT * from "posted_images" ORDER BY "timestamp" DESC LIMIT ?',
-      params: [limit.toString()]
-    });
-
-    return response.result[0].results as Image[];
-  }
-
-  /**
-   * Retrieves a specific image by its perceptual hash.
-   * @param {string} phash - The perceptual hash of the image to find
-   * @returns {Promise<Image | undefined>} Promise that resolves to the Image object if found, undefined otherwise
-   * @throws {Error} When database query fails or required environment variables are missing
-   */
-  async getImagesByPhash(phash: string): Promise<Image[]> {
-    return (
-      await this._client.d1.database.query(CLOUDFLARE_DB_ID!, {
-        account_id: CLOUDFLARE_ACCOUNT_ID!,
-        sql: 'SELECT * from "posted_images" where "phash" = ? ORDER BY "timestamp" ASC',
-        params: [phash]
+  async getImages(filter: Partial<Image> = {}): Promise<Image[]> {
+    const { whereClause, params } = this._buildWhereClause(filter);
+    return ((
+      await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
+        account_id: CLOUDFLARE_ACCOUNT_ID,
+        sql: `SELECT * FROM images ${whereClause} ORDER BY first_post_timestamp DESC`,
+        params
       })
-    ).result[0].results as Image[];
+    ).result[0].results ?? []) as Image[];
+  }
+
+  private _buildWhereClause(filter: Partial<Image>): { whereClause: string; params: any[] } {
+    const conditions: string[] = [];
+    const params: any[] = [];
+    for (const [key, value] of Object.entries(filter)) {
+      if (value !== undefined) {
+        conditions.push(`${key} = ?`);
+        params.push(value);
+      }
+    }
+    return {
+      whereClause: conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "",
+      params
+    };
   }
 }
