@@ -21,3 +21,5 @@ export type ImageUpdate = {
   message_id: string;
   timestamp: number;
 };
+
+export type Link = Omit<ImageUpdate, "phash"> & { url: string };

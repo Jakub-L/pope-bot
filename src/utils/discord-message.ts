@@ -1,6 +1,6 @@
 import { Message } from "discord.js";
 import { formatDiff } from "./datetime";
-import type { Image } from "../types";
+import type { Image, Link } from "../types";
 import salutations from "../data/salutations.json";
 
 const randomSelection = <T>(array: T[]): T => {
@@ -31,12 +31,22 @@ export const getReply = (image: Image): string => {
   return [salutation, countMessage, firstSeen, lastSeen].join(" ").trim();
 };
 
-export const getLinks = (message: Message): Set<string> => {
-  const { content, embeds, attachments } = message;
+export const getLinks = (message: Message): Link[] => {
+  const { content, embeds, attachments, author } = message;
 
-  return new Set([
+  return [
     ...embeds.map(embed => embed.url).filter(url => url !== null),
     ...attachments.map(attachment => attachment.url).filter(Boolean),
     ...(content.match(/https?:\/\/[^\s]+/g) || [])
-  ]);
+  ].map(
+    url =>
+      ({
+        url,
+        guild_id: message.channelId,
+        user_name: author.globalName || author.username,
+        channel_id: message.channelId,
+        message_id: message.id,
+        timestamp: message.createdTimestamp
+      } as Link)
+  );
 };
