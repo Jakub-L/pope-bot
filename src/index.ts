@@ -2,7 +2,7 @@ import "dotenv/config";
 import { Client, Events, GatewayIntentBits } from "discord.js";
 import phash from "sharp-phash";
 
-import { Database, getReply } from "./utils";
+import { Database, getLinks, getReply } from "./utils";
 
 const { DISCORD_TOKEN } = process.env;
 
@@ -16,15 +16,9 @@ const discordClient = new Client({
 });
 
 discordClient.on(Events.MessageCreate, async message => {
-  const { content, embeds, attachments, author } = message;
-  if (author.bot) return;
+  if (message.author.bot) return;
 
-  const links: Set<string> = new Set([
-    ...embeds.map(embed => embed.url).filter(url => url !== null),
-    ...attachments.map(attachment => attachment.url).filter(Boolean),
-    ...(content.match(/https?:\/\/[^\s]+/g) || [])
-  ]);
-
+  const links = getLinks(message);
   if (links.size === 0) return;
 
   for (const link of links) {
@@ -43,16 +37,16 @@ discordClient.on(Events.MessageCreate, async message => {
       const update = {
         phash: phashValue,
         guild_id: message.guild?.id || "0",
-        user_name: author.globalName || author.username,
+        user_name: message.author.globalName || message.author.username,
         channel_id: message.channel.id,
         message_id: message.id,
         timestamp: Date.now()
       };
 
       if (images.length > 0) {
-        // message.reply({
-        //   content: getReply(images[0])
-        // })
+        message.reply({
+          content: getReply(images[0])
+        });
         await db.updateImage(update);
       } else await db.addImage(update);
     }

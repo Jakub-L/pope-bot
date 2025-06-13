@@ -1,5 +1,6 @@
-import type { Image } from "../types";
+import { Message } from "discord.js";
 import { formatDiff } from "./datetime";
+import type { Image } from "../types";
 import salutations from "../data/salutations.json";
 
 const randomSelection = <T>(array: T[]): T => {
@@ -28,4 +29,14 @@ export const getReply = (image: Image): string => {
     count > 1 ? `A ostatnio ${last_post_user_name} ${formatDiff(last_post_timestamp)}.` : "";
 
   return [salutation, countMessage, firstSeen, lastSeen].join(" ").trim();
+};
+
+export const getLinks = (message: Message): Set<string> => {
+  const { content, embeds, attachments } = message;
+
+  return new Set([
+    ...embeds.map(embed => embed.url).filter(url => url !== null),
+    ...attachments.map(attachment => attachment.url).filter(Boolean),
+    ...(content.match(/https?:\/\/[^\s]+/g) || [])
+  ]);
 };
