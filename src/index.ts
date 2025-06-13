@@ -1,8 +1,7 @@
 import "dotenv/config";
 import { Client, Events, GatewayIntentBits } from "discord.js";
-import phash from "sharp-phash";
 
-import { Database, getLinks, getReply } from "./utils";
+import { Database, getLinks, getPhash, getReply } from "./utils";
 
 const { DISCORD_TOKEN } = process.env;
 
@@ -22,20 +21,15 @@ discordClient.on(Events.MessageCreate, async message => {
   if (links.size === 0) return;
 
   for (const link of links) {
-    const response = await fetch(link, { method: "GET" });
-    const isImage = response.headers.get("content-type")?.startsWith("image/");
-    if (isImage) {
-      const arrayBuffer = await response.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const phashValue = await phash(buffer);
-
+    const phash = await getPhash(link);
+    if (phash) {
       const images = await db.getImages({
-        phash: phashValue,
+        phash,
         guild_id: message.guild?.id || "0"
       });
 
       const update = {
-        phash: phashValue,
+        phash,
         guild_id: message.guild?.id || "0",
         user_name: message.author.globalName || message.author.username,
         channel_id: message.channel.id,
