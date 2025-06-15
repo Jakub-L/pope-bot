@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Cloudflare } from "cloudflare";
+import { v4 as uuid } from "uuid";
 
 import type { Image, ImageUpdate } from "../types";
 
@@ -105,6 +106,24 @@ export class Database {
         ]
       })
     ).result[0].results?.[0] as Image;
+  }
+
+  async getLastImport(): Promise<number | null> {
+    const imports = (
+      await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
+        account_id: CLOUDFLARE_ACCOUNT_ID,
+        sql: `SELECT timestamp FROM imports ORDER BY timestamp DESC LIMIT 1`
+      })
+    ).result[0].results?.[0];
+    return imports ? (imports as { timestamp: number }).timestamp : null;
+  }
+
+  async recordImport(timestamp: number): Promise<void> {
+    await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
+      account_id: CLOUDFLARE_ACCOUNT_ID,
+      sql: `INSERT INTO imports (id, timestamp) VALUES (?, ?)`,
+      params: [uuid(), String(timestamp)]
+    });
   }
 
   async deleteAllImages(): Promise<void> {
