@@ -1,0 +1,69 @@
+import { existsSync, mkdirSync, appendFileSync, writeFileSync } from "fs";
+import "dotenv/config";
+import { ChannelType, Client, Events, GatewayIntentBits } from "discord.js";
+
+import { Database, getLinks } from "../src/utils";
+
+const { DISCORD_TOKEN } = process.env;
+const MAX_MESSAGES = Infinity;
+
+const db = new Database();
+const discordClient = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessages
+  ]
+});
+
+discordClient.once(Events.ClientReady, async () => {
+  let isFirstWrite = true;
+  const timestamp = Date.now();
+  const lastImport = await db.getLastImport();
+
+  if (!existsSync("./temp")) mkdirSync("./temp");
+  writeFileSync("./temp/links.json", "[", "utf-8");
+
+  const channels = Array.from(discordClient.channels.cache.values()).filter(
+    channel => channel.type === ChannelType.GuildText
+  );
+  if (channels.length === 0) return;
+
+  for (const channel of channels) {
+    console.log(`Processing channel: ${channel.name}`);
+    let messageCount = 0;
+
+    let message = await channel.messages
+      .fetch({ limit: 1 })
+      .then(messagePage => (messagePage.size === 1 ? messagePage.at(0) : null));
+
+    while (message && messageCount < MAX_MESSAGES) {
+      if (lastImport && message.createdTimestamp < lastImport) break;
+      const messagePage = await channel.messages.fetch({ limit: 100, before: message.id });
+      messageCount += messagePage.size;
+
+      for (const fetchedMessage of messagePage.values()) {
+        if (lastImport && fetchedMessage.createdTimestamp < lastImport) break;
+        if (fetchedMessage.author.bot) continue;
+        const links = await getLinks(fetchedMessage);
+        for (const link of links) {
+          appendFileSync(
+            "./temp/links.json",
+            `${isFirstWrite ? "" : ","}${JSON.stringify(link)}`,
+            "utf-8"
+          );
+          isFirstWrite = false;
+        }
+      }
+
+      console.log(`Channel ${channel.name} | Fetched ${messageCount} messages`);
+      message = 0 < messagePage.size ? messagePage.at(messagePage.size - 1) : null;
+    }
+  }
+
+  appendFileSync("./temp/links.json", "]", "utf-8");
+  await db.recordImport(timestamp);
+  process.exit();
+});
+
+discordClient.login(DISCORD_TOKEN);
