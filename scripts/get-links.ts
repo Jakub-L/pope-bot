@@ -45,21 +45,12 @@ discordClient.once(Events.ClientReady, async () => {
       .then(messagePage => (messagePage.size === 1 ? messagePage.at(0) : null));
 
     while (message && messageCount < MAX_MESSAGES) {
-      if (lastImport && message.createdTimestamp < lastImport) {
-        stats.channelMessages[channel.name] = messageCount;
-        stats.totalMessages += messageCount;
-
-        break;
-      }
+      if (lastImport && message.createdTimestamp < lastImport) break;
       const messagePage = await channel.messages.fetch({ limit: 100, before: message.id });
       messageCount += messagePage.size;
 
       for (const fetchedMessage of messagePage.values()) {
-        if (lastImport && fetchedMessage.createdTimestamp < lastImport) {
-          stats.channelMessages[channel.name] = messageCount;
-          stats.totalMessages += messageCount;
-          break;
-        }
+        if (lastImport && fetchedMessage.createdTimestamp < lastImport) break;
         if (fetchedMessage.author.bot) continue;
         const links = await getLinks(fetchedMessage);
         for (const link of links) {
@@ -76,6 +67,9 @@ discordClient.once(Events.ClientReady, async () => {
       console.log(`Channel ${channel.name} | Fetched ${messageCount} messages`);
       message = 0 < messagePage.size ? messagePage.at(messagePage.size - 1) : null;
     }
+
+    stats.channelMessages[channel.name] = messageCount;
+    stats.totalMessages += messageCount;
   }
 
   appendFileSync("./temp/links.json", "]", "utf-8");
