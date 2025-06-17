@@ -56,7 +56,7 @@ discordClient.once(Events.ClientReady, async () => {
         for (const link of links) {
           appendFileSync(
             "./temp/links.json",
-            `${isFirstWrite ? "" : ","}${JSON.stringify(link)}`,
+            `${isFirstWrite ? "" : ",\n"}${JSON.stringify(link, null, 2)}`,
             "utf-8"
           );
           stats.totalLinks++;
