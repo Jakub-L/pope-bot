@@ -20,6 +20,12 @@ discordClient.once(Events.ClientReady, async () => {
   let isFirstWrite = true;
   const timestamp = Date.now();
   const lastImport = await db.getLastImport();
+  const stats: Record<string, any> = {
+    totalMessages: 0,
+    totalLinks: 0,
+    totalChannels: 0,
+    channelMessages: {}
+  };
 
   if (!existsSync("./temp")) mkdirSync("./temp");
   writeFileSync("./temp/links.json", "[", "utf-8");
@@ -28,6 +34,7 @@ discordClient.once(Events.ClientReady, async () => {
     channel => channel.type === ChannelType.GuildText
   );
   if (channels.length === 0) return;
+  stats.totalChannels = channels.length;
 
   for (const channel of channels) {
     console.log(`Processing channel: ${channel.name}`);
@@ -38,12 +45,21 @@ discordClient.once(Events.ClientReady, async () => {
       .then(messagePage => (messagePage.size === 1 ? messagePage.at(0) : null));
 
     while (message && messageCount < MAX_MESSAGES) {
-      if (lastImport && message.createdTimestamp < lastImport) break;
+      if (lastImport && message.createdTimestamp < lastImport) {
+        stats.channelMessages[channel.name] = messageCount;
+        stats.totalMessages += messageCount;
+
+        break;
+      }
       const messagePage = await channel.messages.fetch({ limit: 100, before: message.id });
       messageCount += messagePage.size;
 
       for (const fetchedMessage of messagePage.values()) {
-        if (lastImport && fetchedMessage.createdTimestamp < lastImport) break;
+        if (lastImport && fetchedMessage.createdTimestamp < lastImport) {
+          stats.channelMessages[channel.name] = messageCount;
+          stats.totalMessages += messageCount;
+          break;
+        }
         if (fetchedMessage.author.bot) continue;
         const links = await getLinks(fetchedMessage);
         for (const link of links) {
@@ -52,6 +68,7 @@ discordClient.once(Events.ClientReady, async () => {
             `${isFirstWrite ? "" : ","}${JSON.stringify(link)}`,
             "utf-8"
           );
+          stats.totalLinks++;
           isFirstWrite = false;
         }
       }
@@ -63,6 +80,8 @@ discordClient.once(Events.ClientReady, async () => {
 
   appendFileSync("./temp/links.json", "]", "utf-8");
   await db.recordImport(timestamp);
+
+  console.log(JSON.stringify(stats, null, 2));
   process.exit();
 });
 
