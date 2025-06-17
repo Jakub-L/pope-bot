@@ -4,7 +4,7 @@ import { ChannelType, Client, Events, GatewayIntentBits } from "discord.js";
 
 import { Database, getLinks } from "../src/utils";
 
-const { DISCORD_TOKEN } = process.env;
+const { DISCORD_TOKEN, DISCORD_TESTING_GUILD_ID = "" } = process.env;
 const MAX_MESSAGES = Infinity;
 
 const db = new Database();
@@ -37,6 +37,7 @@ discordClient.once(Events.ClientReady, async () => {
   stats.totalChannels = channels.length;
 
   for (const channel of channels) {
+    if (channel.guildId === DISCORD_TESTING_GUILD_ID) continue;
     console.log(`Processing channel: ${channel.name}`);
     let messageCount = 0;
 
