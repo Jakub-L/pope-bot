@@ -6,7 +6,11 @@ const main = async () => {
   const file = readFileSync("./temp/links.json", "utf-8");
   const links: Link[] = JSON.parse(file);
 
-  let errorCount = 0;
+  const stats: Record<string, any> = {
+    totalLinks: links.length,
+    errorCount: 0,
+    validUpdates: 0
+  };
   let isFirstWrite = true;
 
   console.log(`Total links to process: ${links.length}`);
@@ -14,11 +18,11 @@ const main = async () => {
 
   for (let i = 0; i < links.length; i++) {
     if (i > 0 && i % 100 === 0) console.log(`Processed ${i}/${links.length} links...`);
-    if (i < 60550) continue;
     const link = links[i];
     try {
       const update = await getUpdate(link);
       if (update !== null) {
+        stats.validUpdates++;
         appendFileSync(
           "./temp/updates.json",
           `${isFirstWrite ? "" : ","}${JSON.stringify(update)}`,
@@ -27,11 +31,12 @@ const main = async () => {
         isFirstWrite = false;
       }
     } catch (error) {
-      console.log(`Errors: ${++errorCount}`);
+      console.log(`Errors: ${++stats.errorCount}`);
     }
   }
 
   appendFileSync("./temp/updates.json", "]", "utf-8");
+  console.log(JSON.stringify(stats, null, 2));
 };
 
 main();
