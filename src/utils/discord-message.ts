@@ -42,7 +42,7 @@ export const getLinks = (message: Message): Link[] => {
     url =>
       ({
         url,
-        guild_id: message.channelId,
+        guild_id: message.guildId,
         user_name: author.globalName || author.username,
         channel_id: message.channelId,
         message_id: message.id,
