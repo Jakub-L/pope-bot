@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, appendFileSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, appendFileSync, writeFileSync, readFileSync } from "fs";
 import "dotenv/config";
 import { ChannelType, Client, Events, GatewayIntentBits } from "discord.js";
 
@@ -28,7 +28,7 @@ discordClient.once(Events.ClientReady, async () => {
   };
 
   if (!existsSync("./temp")) mkdirSync("./temp");
-  writeFileSync("./temp/links.json", "[", "utf-8");
+  writeFileSync("./temp/links.json", `{ "timestamp": ${timestamp}, "links": [`, "utf-8");
 
   const channels = Array.from(discordClient.channels.cache.values()).filter(
     channel => channel.type === ChannelType.GuildText
@@ -73,10 +73,23 @@ discordClient.once(Events.ClientReady, async () => {
     stats.totalMessages += messageCount;
   }
 
-  appendFileSync("./temp/links.json", "]", "utf-8");
+  appendFileSync("./temp/links.json", "]}", "utf-8");
   await db.recordImport(timestamp);
 
-  console.log(JSON.stringify(stats, null, 2));
+  const existingStats = JSON.parse(readFileSync("./stats/get-links.json", "utf-8"));
+  writeFileSync(
+    "./stats/get-links.json",
+    JSON.stringify(
+      {
+        ...existingStats,
+        [timestamp]: stats
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
+
   process.exit();
 });
 

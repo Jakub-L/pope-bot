@@ -4,7 +4,7 @@ import { getUpdate } from "../src/utils";
 
 const main = async () => {
   const file = readFileSync("./temp/links.json", "utf-8");
-  const links: Link[] = JSON.parse(file);
+  const { timestamp, links }: { timestamp: number; links: Link[] } = JSON.parse(file);
 
   const stats: Record<string, any> = {
     totalLinks: links.length,
@@ -14,7 +14,7 @@ const main = async () => {
   let isFirstWrite = true;
 
   console.log(`Total links to process: ${links.length}`);
-  writeFileSync("./temp/updates.json", "[", "utf-8");
+  writeFileSync("./temp/updates.json", `{ "timestamp": ${timestamp}, "updates": [`, "utf-8");
 
   for (let i = 0; i < links.length; i++) {
     if (i > 0 && i % 100 === 0) console.log(`Processed ${i}/${links.length} links...`);
@@ -35,8 +35,21 @@ const main = async () => {
     }
   }
 
-  appendFileSync("./temp/updates.json", "]", "utf-8");
-  console.log(JSON.stringify(stats, null, 2));
+  appendFileSync("./temp/updates.json", "]}", "utf-8");
+
+  const existingStats = JSON.parse(readFileSync("./stats/get-updates.json", "utf-8"));
+  writeFileSync(
+    "./stats/get-links.json",
+    JSON.stringify(
+      {
+        ...existingStats,
+        [timestamp]: stats
+      },
+      null,
+      2
+    ),
+    "utf-8"
+  );
 };
 
 main();
