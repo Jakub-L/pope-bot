@@ -39,7 +39,7 @@ const main = async () => {
 
   const existingStats = JSON.parse(readFileSync("./stats/get-updates.json", "utf-8"));
   writeFileSync(
-    "./stats/get-links.json",
+    "./stats/get-updates.json",
     JSON.stringify(
       {
         ...existingStats,
