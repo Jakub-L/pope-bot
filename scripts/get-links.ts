@@ -4,7 +4,7 @@ import { ChannelType, Client, Events, GatewayIntentBits } from "discord.js";
 
 import { Database, getLinks } from "../src/utils";
 
-const { DISCORD_TOKEN, DISCORD_TESTING_GUILD_ID = "" } = process.env;
+const { DISCORD_TOKEN, DISCORD_EXCLUDED_GUILD_IDS = "" } = process.env;
 const MAX_MESSAGES = Infinity;
 
 const db = new Database();
@@ -18,6 +18,7 @@ const discordClient = new Client({
 
 discordClient.once(Events.ClientReady, async () => {
   let isFirstWrite = true;
+  const excludedGuilds = new Set(DISCORD_EXCLUDED_GUILD_IDS.split(",").map(id => id.trim()));
   const timestamp = Date.now();
   const lastImport = await db.getLastImport();
   const stats: Record<string, any> = {
@@ -37,7 +38,7 @@ discordClient.once(Events.ClientReady, async () => {
   stats.totalChannels = channels.length;
 
   for (const channel of channels) {
-    if (channel.guildId === DISCORD_TESTING_GUILD_ID) continue;
+    if (excludedGuilds.has(channel.id)) continue;
     console.log(`Processing channel: ${channel.name}`);
     let messageCount = 0;
 
