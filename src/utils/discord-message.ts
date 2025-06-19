@@ -27,11 +27,9 @@ export const getReply = (image: Image, isExcluded: boolean): string => {
   const countMessage = `Już to widziałem ${count} ${count === 1 ? "raz" : "razy"}!`;
   const firstSeen = `Najpierw zapostował to ${first_post_user_name} ${formatDiff(
     first_post_timestamp
-  )} [tutaj](${link}).`;
-  const lastSeen =
-    count > 1 ? `A ostatnio ${last_post_user_name} ${formatDiff(last_post_timestamp)}.` : "";
+  )} tutaj: ${link}`;
 
-  return [salutation, countMessage, firstSeen, lastSeen].join(" ").trim();
+  return [salutation, countMessage, firstSeen].join(" ").trim();
 };
 
 export const getLinks = (message: Message): Link[] => {
