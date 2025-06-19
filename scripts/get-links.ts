@@ -28,8 +28,12 @@ discordClient.once(Events.ClientReady, async () => {
     channelMessages: {}
   };
 
-  if (!existsSync("./temp")) mkdirSync("./temp");
-  writeFileSync("./temp/links.json", `{ "timestamp": ${timestamp}, "links": [`, "utf-8");
+  if (!existsSync("./export")) mkdirSync("./export");
+  writeFileSync(
+    `./export/links-${timestamp}.json`,
+    `{ "timestamp": ${timestamp}, "links": [`,
+    "utf-8"
+  );
 
   const channels = Array.from(discordClient.channels.cache.values()).filter(
     channel => channel.type === ChannelType.GuildText
@@ -38,7 +42,7 @@ discordClient.once(Events.ClientReady, async () => {
   stats.totalChannels = channels.length;
 
   for (const channel of channels) {
-    if (excludedGuilds.has(channel.id)) continue;
+    if (excludedGuilds.has(channel.guildId)) continue;
     console.log(`Processing channel: ${channel.name}`);
     let messageCount = 0;
 
@@ -55,15 +59,14 @@ discordClient.once(Events.ClientReady, async () => {
         if (lastImport && fetchedMessage.createdTimestamp < lastImport) break;
         if (fetchedMessage.author.bot) continue;
         const links = await getLinks(fetchedMessage);
-        for (const link of links) {
-          appendFileSync(
-            "./temp/links.json",
-            `${isFirstWrite ? "" : ",\n"}${JSON.stringify(link, null, 2)}`,
-            "utf-8"
-          );
-          stats.totalLinks++;
-          isFirstWrite = false;
-        }
+        if (links.length === 0) continue;
+        appendFileSync(
+          `./export/links-${timestamp}.json`,
+          `${isFirstWrite ? "" : ",\n"}${JSON.stringify(links).slice(1, -1)}`,
+          "utf-8"
+        );
+        stats.totalLinks += links.length;
+        isFirstWrite = false;
       }
 
       console.log(`Channel ${channel.name} | Fetched ${messageCount} messages`);
@@ -74,7 +77,7 @@ discordClient.once(Events.ClientReady, async () => {
     stats.totalMessages += messageCount;
   }
 
-  appendFileSync("./temp/links.json", "]}", "utf-8");
+  appendFileSync(`./export/links-${timestamp}.json`, "]}", "utf-8");
   await db.recordImport(timestamp);
 
   const existingStats = JSON.parse(readFileSync("./stats/get-links.json", "utf-8"));
