@@ -25,7 +25,7 @@ const main = async () => {
         stats.validUpdates++;
         appendFileSync(
           "./temp/updates.json",
-          `${isFirstWrite ? "" : ","}${JSON.stringify(update)}`,
+          `${isFirstWrite ? "" : ",\n"}${JSON.stringify(update, null, 2)}`,
           "utf-8"
         );
         isFirstWrite = false;
