@@ -64,7 +64,14 @@ export class Database {
           last_post_timestamp,
           count
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
-        RETURNING *`,
+        ON CONFLICT(id) DO UPDATE SET
+          last_post_user_name = EXCLUDED.last_post_user_name,
+          last_post_channel_id = EXCLUDED.last_post_channel_id,
+          last_post_message_id = EXCLUDED.last_post_message_id,
+          last_post_timestamp = EXCLUDED.last_post_timestamp,
+          count = images.count + 1
+        RETURNING *
+        `,
         params: [
           `${update.guild_id}-${update.phash}`,
           update.phash,
@@ -77,32 +84,6 @@ export class Database {
           update.channel_id,
           update.message_id,
           String(update.timestamp)
-        ]
-      })
-    ).result[0].results?.[0] as Image;
-  }
-
-  async updateImage(update: ImageUpdate): Promise<Image> {
-    return (
-      await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
-        account_id: CLOUDFLARE_ACCOUNT_ID,
-        sql: `
-        UPDATE images
-        SET
-          last_post_user_name = ?,
-          last_post_channel_id = ?,
-          last_post_message_id = ?,
-          last_post_timestamp = ?,
-          count = count + 1
-        WHERE id = ?
-        RETURNING *
-      `,
-        params: [
-          update.user_name,
-          update.channel_id,
-          update.message_id,
-          String(update.timestamp),
-          `${update.guild_id}-${update.phash}`
         ]
       })
     ).result[0].results?.[0] as Image;
@@ -123,13 +104,6 @@ export class Database {
       account_id: CLOUDFLARE_ACCOUNT_ID,
       sql: `INSERT INTO imports (id, timestamp) VALUES (?, ?)`,
       params: [uuid(), String(timestamp)]
-    });
-  }
-
-  async deleteAllImages(): Promise<void> {
-    await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
-      account_id: CLOUDFLARE_ACCOUNT_ID,
-      sql: `DELETE FROM images`
     });
   }
 
