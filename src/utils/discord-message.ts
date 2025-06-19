@@ -7,7 +7,7 @@ const randomSelection = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
 
-export const getReply = (image: Image): string => {
+export const getReply = (image: Image, isExcluded: boolean): string => {
   const {
     count,
     guild_id,
@@ -18,8 +18,11 @@ export const getReply = (image: Image): string => {
     last_post_user_name,
     last_post_timestamp
   } = image;
-  const link = `https://discord.com/channels/${guild_id}/${first_post_channel_id}/${first_post_message_id}`;
+  if (isExcluded) {
+    return `${randomSelection(salutations)} Już to widzi-- a przepraszam, tobie wolno.`;
+  }
 
+  const link = `https://discord.com/channels/${guild_id}/${first_post_channel_id}/${first_post_message_id}`;
   const salutation = randomSelection(salutations);
   const countMessage = `Już to widziałem ${count} ${count === 1 ? "raz" : "razy"}!`;
   const firstSeen = `Najpierw zapostował to ${first_post_user_name} ${formatDiff(
