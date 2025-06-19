@@ -10,7 +10,7 @@
     "get-links": "tsx scripts/get-links.ts",
     "get-updates": "tsx scripts/get-updates.ts",
     "update-db": "tsx scripts/update-db.ts",
-    "pull-from-discord": "npm run get-links && npm run get-updates && npm run update-db"
+    "get-images-from-discord": "npm run get-links && npm run get-updates && npm run update-db"
   },
   "repository": {
     "type": "git",
