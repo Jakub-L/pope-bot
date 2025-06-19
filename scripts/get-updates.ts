@@ -1,41 +1,61 @@
-import { appendFileSync, readFileSync, writeFileSync } from "fs";
-import { Link } from "../src/types";
+import { appendFileSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { ImageUpdate, Link } from "../src/types";
 import { getUpdate } from "../src/utils";
 
-const main = async () => {
-  const file = readFileSync("./temp/links.json", "utf-8");
-  const { timestamp, links }: { timestamp: number; links: Link[] } = JSON.parse(file);
+const BATCH_SIZE = 25;
 
+const processLink = async (
+  link: Link,
+  stats: Record<string, any>
+): Promise<ImageUpdate | null> => {
+  try {
+    const update = await getUpdate(link);
+    if (update !== null) {
+      stats.validUpdates++;
+      return update;
+    }
+  } catch (error) {
+    console.error(`Error processing link ${link.url}:`, error);
+    stats.errorCount++;
+  }
+  return null;
+};
+
+const main = async () => {
+  const file = readdirSync("./export")
+    .filter(file => file.startsWith("links-"))
+    .sort()
+    .pop();
+  if (!file) process.exit(1);
+  const { timestamp, links }: { timestamp: number; links: Link[] } = JSON.parse(file);
   const stats: Record<string, any> = {
     totalLinks: links.length,
     errorCount: 0,
     validUpdates: 0
   };
-  let isFirstWrite = true;
+  const updates: ImageUpdate[] = [];
+
+  console.log(`Processing file: ${file}`);
 
   console.log(`Total links to process: ${links.length}`);
-  writeFileSync("./temp/updates.json", `{ "timestamp": ${timestamp}, "updates": [`, "utf-8");
+  writeFileSync(
+    `./export/updates-${timestamp}.json`,
+    `{ "timestamp": ${timestamp}, "updates": `,
+    "utf-8"
+  );
 
-  for (let i = 0; i < links.length; i++) {
-    if (i > 0 && i % 100 === 0) console.log(`Processed ${i}/${links.length} links...`);
-    const link = links[i];
-    try {
-      const update = await getUpdate(link);
-      if (update !== null) {
-        stats.validUpdates++;
-        appendFileSync(
-          "./temp/updates.json",
-          `${isFirstWrite ? "" : ",\n"}${JSON.stringify(update, null, 2)}`,
-          "utf-8"
-        );
-        isFirstWrite = false;
-      }
-    } catch (error) {
-      console.log(`Errors: ${++stats.errorCount}`);
+  for (let i = 0; i < links.length; i += BATCH_SIZE) {
+    const batch = links.slice(i, i + BATCH_SIZE);
+    console.log(`Processing items ${i + 1} to ${i + 1 + BATCH_SIZE}...`);
+
+    const results = await Promise.all(batch.map(link => processLink(link, stats)));
+    for (const update of results) {
+      if (update !== null) updates.push(update);
     }
   }
 
-  appendFileSync("./temp/updates.json", "]}", "utf-8");
+  appendFileSync(`./export/updates-${timestamp}.json`, JSON.stringify(updates), "utf-8");
+  appendFileSync(`./export/updates-${timestamp}.json`, "}", "utf-8");
 
   const existingStats = JSON.parse(readFileSync("./stats/get-updates.json", "utf-8"));
   writeFileSync(
