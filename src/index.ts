@@ -3,7 +3,7 @@ import { Client, Events, GatewayIntentBits } from "discord.js";
 
 import { Database, getLinks, getReply, getUpdate } from "./utils";
 
-const { DISCORD_TOKEN } = process.env;
+const { DISCORD_TOKEN, DISCORD_EXCLUDED_USER_IDS = "" } = process.env;
 
 const db = new Database();
 const discordClient = new Client({
@@ -14,6 +14,8 @@ const discordClient = new Client({
   ]
 });
 
+const excludedUsers = new Set(DISCORD_EXCLUDED_USER_IDS.split(",").map(id => id.trim()));
+
 discordClient.on(Events.MessageCreate, async message => {
   if (message.author.bot) return;
 
@@ -23,17 +25,10 @@ discordClient.on(Events.MessageCreate, async message => {
   for (const link of links) {
     const update = await getUpdate(link);
     if (update) {
-      const images = await db.getImages({
-        phash: update.phash,
-        guild_id: message.guild?.id || "0"
-      });
-
-      if (images.length > 0) {
-        message.reply({
-          content: getReply(images[0])
-        });
-        await db.updateImage(update);
-      } else await db.addImage(update);
+      const image = await db.addImage(update);
+      if (image.count > 1) {
+        message.reply({ content: getReply(image, excludedUsers.has(message.author.id)) });
+      }
     }
   }
 });
