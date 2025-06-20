@@ -20,6 +20,7 @@ export type ImageUpdate = {
   channel_id: string;
   message_id: string;
   timestamp: number;
+  count?: number;
 };
 
 export type Link = Omit<ImageUpdate, "phash"> & { url: string };
