@@ -63,7 +63,7 @@ export class Database {
           last_post_message_id,
           last_post_timestamp,
           count
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           last_post_user_name = EXCLUDED.last_post_user_name,
           last_post_channel_id = EXCLUDED.last_post_channel_id,
@@ -83,7 +83,8 @@ export class Database {
           update.user_name,
           update.channel_id,
           update.message_id,
-          String(update.timestamp)
+          String(update.timestamp),
+          String(update.count ?? 1)
         ]
       })
     ).result[0].results?.[0] as Image;
