@@ -2,7 +2,7 @@ import { appendFileSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { ImageUpdate, Link } from "../src/types";
 import { getUpdate } from "../src/utils";
 
-const BATCH_SIZE = 25;
+const BATCH_SIZE = 200;
 
 const processLink = async (
   link: Link,
@@ -15,18 +15,18 @@ const processLink = async (
       return update;
     }
   } catch (error) {
-    console.error(`Error processing link ${link.url}:`, error);
     stats.errorCount++;
   }
   return null;
 };
 
 const main = async () => {
-  const file = readdirSync("./export")
-    .filter(file => file.startsWith("links-"))
+  const fileName: string | undefined = readdirSync("./export")
+    .filter((fileName: string) => fileName.startsWith("links-"))
     .sort()
     .pop();
-  if (!file) process.exit(1);
+  if (!fileName) process.exit(1);
+  const file: string = readFileSync(`./export/${fileName}`, "utf-8");
   const { timestamp, links }: { timestamp: number; links: Link[] } = JSON.parse(file);
   const stats: Record<string, any> = {
     totalLinks: links.length,
@@ -35,7 +35,7 @@ const main = async () => {
   };
   const updates: ImageUpdate[] = [];
 
-  console.log(`Processing file: ${file}`);
+  console.log(`Processing file: ${fileName}`);
 
   console.log(`Total links to process: ${links.length}`);
   writeFileSync(
@@ -46,7 +46,7 @@ const main = async () => {
 
   for (let i = 0; i < links.length; i += BATCH_SIZE) {
     const batch = links.slice(i, i + BATCH_SIZE);
-    console.log(`Processing items ${i + 1} to ${i + 1 + BATCH_SIZE}...`);
+    console.log(`Processing items ${i + 1} to ${i + BATCH_SIZE}...`);
 
     const results = await Promise.all(batch.map(link => processLink(link, stats)));
     for (const update of results) {
