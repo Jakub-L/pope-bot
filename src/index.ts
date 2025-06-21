@@ -31,7 +31,11 @@ discordClient.on(Events.MessageCreate, async message => {
 
   console.log(`\n${new Date().toISOString()} | Message from ${message.author.tag}`);
   console.log(
-    `\t${message.content.length > 50 ? message.content.slice(0, 50) + "..." : message.content}`
+    `\t${
+      message.content.length > 50
+        ? message.content.slice(0, 50) + "..."
+        : message.content || "No content"
+    }`
   );
 
   const links = getLinks(message);
