@@ -1,14 +1,22 @@
 import "dotenv/config";
-import { Client, Events, GatewayIntentBits } from "discord.js";
+import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
 
+import commands from "./commands";
 import { Database, getLinks, getReply, getUpdate } from "./utils";
 
+// TYPES
+type ClientWithCommands = Client & { commands: Collection<string, any> };
+
+// CONSTANTS & GLOBAL VARIABLES
 const {
   DISCORD_TOKEN,
   DISCORD_EXCLUDED_USER_IDS = "",
   DISCORD_EXCLUDED_GUILD_IDS = ""
 } = process.env;
+const excludedUsers = new Set(DISCORD_EXCLUDED_USER_IDS.split(",").map(id => id.trim()));
+const excludedGuilds = new Set(DISCORD_EXCLUDED_GUILD_IDS.split(",").map(id => id.trim()));
 
+// INITIALISE CLIENTS
 const db = new Database();
 const discordClient = new Client({
   intents: [
@@ -16,11 +24,15 @@ const discordClient = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessages
   ]
-});
+}) as ClientWithCommands;
 
-const excludedUsers = new Set(DISCORD_EXCLUDED_USER_IDS.split(",").map(id => id.trim()));
-const excludedGuilds = new Set(DISCORD_EXCLUDED_GUILD_IDS.split(",").map(id => id.trim()));
+// REGISTER COMMANDS
+discordClient.commands = new Collection();
+for (const command of commands) {
+  discordClient.commands.set(command.data.name, command);
+}
 
+// HANDLERS
 discordClient.once(Events.ClientReady, async () => {
   console.log(`Logged in as ${discordClient.user?.tag}`);
 });
@@ -54,6 +66,15 @@ discordClient.on(Events.MessageCreate, async message => {
       }
     }
   }
+});
+
+discordClient.on(Events.InteractionCreate, async interaction => {
+  if (!interaction.isChatInputCommand()) return;
+  const command = (interaction.client as ClientWithCommands).commands.get(
+    interaction.commandName
+  );
+  if (!command) return;
+  await command.execute(interaction);
 });
 
 discordClient.login(DISCORD_TOKEN);
