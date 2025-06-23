@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 
 const ping = {
   data: new SlashCommandBuilder()
@@ -6,7 +6,8 @@ const ping = {
     .setDescription("Sprawdza, czy Papieżbot jest aktywny."),
   async exectue(interaction: ChatInputCommandInteraction) {
     interaction.reply({
-      content: "Papieżbot jest aktywny!"
+      content: "Papieżbot jest aktywny!",
+      flags: MessageFlags.Ephemeral
     });
   }
 };
