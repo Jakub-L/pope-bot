@@ -10,11 +10,6 @@ const {
   CLOUDFLARE_DB_ID = ""
 } = process.env;
 
-// TODO:
-// - Change the system to only store one phash per image
-// - Add a secondary table to store the first/last time an image was posted, and by whom
-// - Ensure the ID is per-server, not globally unique
-
 /** Database connection class for managing Cloudflare D1 database operations. */
 export class Database {
   /** Private Cloudflare client instance for database operations. */
