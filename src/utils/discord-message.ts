@@ -35,11 +35,13 @@ export const getReply = (image: Image, isExcluded: boolean): string => {
 export const getLinks = (message: Message): Link[] => {
   const { content, embeds, attachments, author } = message;
 
-  return [
-    ...embeds.map(embed => embed.url).filter(url => url !== null),
-    ...attachments.map(attachment => attachment.url).filter(Boolean),
-    ...(content.match(/https?:\/\/[^\s]+/g) || [])
-  ].map(
+  return Array.from(
+    new Set([
+      ...embeds.map(embed => embed.url).filter(url => url !== null),
+      ...attachments.map(attachment => attachment.url).filter(Boolean),
+      ...(content.match(/https?:\/\/[^\s]+/g) || [])
+    ])
+  ).map(
     url =>
       ({
         url,
