@@ -8,9 +8,11 @@ export const getUpdate = async (link: Link): Promise<ImageUpdate | null> => {
 
   const arrayBuffer = await response.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
+  const phashBin = await phash(buffer);
+  const phashHex = BigInt(`0b${phashBin}`).toString(16).padStart(16, "0");
 
   return {
-    phash: await phash(buffer),
+    phash: phashHex,
     guild_id: link.guild_id,
     user_name: link.user_name,
     channel_id: link.channel_id,
