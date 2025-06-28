@@ -26,13 +26,13 @@ export class Database {
     });
   }
 
-  async getImages(filter: Partial<Image> = {}): Promise<Image[]> {
+  async getImages(fields: string[] = ["*"], filter: Partial<Image> = {}): Promise<Image[]> {
     const { whereClause, params } = this._buildWhereClause(filter);
     return ((
       await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
         account_id: CLOUDFLARE_ACCOUNT_ID,
         sql: `
-          SELECT * FROM images
+          SELECT ${fields.join(", ")} FROM images
           ${whereClause}
           ORDER BY first_post_timestamp DESC`,
         params
