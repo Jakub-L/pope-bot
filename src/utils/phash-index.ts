@@ -1,4 +1,6 @@
 type Tree = { [key: string]: Tree | boolean };
+type SearchNode = { path: string; target: Tree; diff: number };
+type SearchResult = { hex: string; diff: number };
 
 export class PhashIndex {
   public _index: Tree = {};
@@ -28,6 +30,34 @@ export class PhashIndex {
     if (bytes.length !== 8) throw new Error(`Invalid phash length: ${phashHex}`);
     this._deepDelete(bytes);
     this._prune();
+  }
+
+  /**
+   * Finds similar perceptual hashes (phashes) within a given threshold.
+   * @param phashHex - The perceptual hash in hexadecimal format (8 bytes).
+   * @param threshold - The maximum allowed difference in bits between the phash and the stored phashes.
+   * @returns An array of SearchResult objects containing the similar phashes and their differences.
+   * @throws Will throw an error if the phashHex does not have exactly 8 bytes.
+   */
+  public findSimilar(phashHex: string, threshold: number): SearchResult[] {
+    if (phashHex.length !== 16) throw new Error(`Invalid phash length: ${phashHex}`);
+
+    const results: SearchResult[] = [];
+    const queue: SearchNode[] = [{ path: "", target: this._index, diff: 0 }];
+    while (queue.length > 0) {
+      const { path, target, diff } = queue.shift()!;
+      const pathLength = path.length;
+      for (const [key, value] of Object.entries(target)) {
+        const newDiff = diff + this._bitDiff(key, phashHex.slice(pathLength, pathLength + 2));
+        const newPath = `${path}${key}`;
+        if (newDiff > threshold) continue;
+        if (typeof value === "boolean") results.push({ hex: newPath, diff: newDiff });
+        else if (typeof value === "object") {
+          queue.push({ path: newPath, target: value as Tree, diff: newDiff });
+        }
+      }
+    }
+    return results;
   }
 
   /**
@@ -70,5 +100,21 @@ export class PhashIndex {
         if (Object.keys(value).length === 0) delete target[key];
       }
     }
+  }
+
+  /**
+   * Finds the number of bits that differ between two hexadecimal numbers.
+   * @param hexA - First hexadecimal number (as string)
+   * @param hexB - Second hexadecimal number (as string)
+   * @returns The number of differing bits between the two hexadecimal numbers.
+   */
+  private _bitDiff(hexA: string, hexB: string): number {
+    let diff = parseInt(hexA, 16) ^ parseInt(hexB, 16);
+    let count = 0;
+    while (diff) {
+      count += diff & 1;
+      diff >>= 1;
+    }
+    return count;
   }
 }
