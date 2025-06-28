@@ -1,5 +1,4 @@
 export type Image = {
-  id: string;
   phash: string;
   guild_id: string;
   first_post_user_name: string;
