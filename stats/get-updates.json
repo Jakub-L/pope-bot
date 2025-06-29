@@ -1,27 +1,7 @@
 {
-  "1750439655200": {
-    "totalLinks": 92727,
-    "errorCount": 2508,
-    "validUpdates": 48418
-  },
-  "1750452996034": {
-    "totalLinks": 3,
-    "errorCount": 0,
-    "validUpdates": 3
-  },
-  "1750498133277": {
-    "totalLinks": 11,
-    "errorCount": 0,
-    "validUpdates": 8
-  },
-  "1750538702818": {
-    "totalLinks": 20,
-    "errorCount": 0,
-    "validUpdates": 15
-  },
-  "1750687365561": {
-    "totalLinks": 80,
-    "errorCount": 0,
-    "validUpdates": 54
+  "1751146733717": {
+    "totalLinks": 74377,
+    "errorCount": 2323,
+    "validUpdates": 2298
   }
 }
