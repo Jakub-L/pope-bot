@@ -46,7 +46,6 @@ export class Database {
         account_id: CLOUDFLARE_ACCOUNT_ID,
         sql: `
         INSERT INTO images (
-          id,
           phash,
           guild_id,
           first_post_user_name,
@@ -58,17 +57,36 @@ export class Database {
           last_post_message_id,
           last_post_timestamp,
           count
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-          last_post_user_name = EXCLUDED.last_post_user_name,
-          last_post_channel_id = EXCLUDED.last_post_channel_id,
-          last_post_message_id = EXCLUDED.last_post_message_id,
-          last_post_timestamp = EXCLUDED.last_post_timestamp,
-          count = images.count + 1
-        RETURNING *
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(phash) DO UPDATE SET
+            last_post_user_name =
+              CASE
+                WHEN last_post_timestamp < EXCLUDED.last_post_timestamp
+                THEN EXCLUDED.last_post_user_name
+                ELSE last_post_user_name
+              END,
+            last_post_channel_id =
+              CASE
+                WHEN last_post_timestamp < EXCLUDED.last_post_timestamp
+                THEN EXCLUDED.last_post_channel_id
+                ELSE last_post_channel_id
+              END,
+            last_post_message_id =
+              CASE
+                WHEN last_post_timestamp < EXCLUDED.last_post_timestamp
+                THEN EXCLUDED.last_post_message_id
+                ELSE last_post_message_id
+              END,
+            last_post_timestamp =
+              CASE
+                WHEN last_post_timestamp < EXCLUDED.last_post_timestamp
+                THEN EXCLUDED.last_post_timestamp
+                ELSE last_post_timestamp
+              END,
+            count = images.count + 1
+          RETURNING *
         `,
         params: [
-          `${update.guild_id}-${update.phash}`,
           update.phash,
           update.guild_id,
           update.user_name,
