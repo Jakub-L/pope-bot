@@ -7,7 +7,7 @@ const randomSelection = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
 
-const getSingleImageReply = (image: Image): string => {
+const getSingleImageReply = (image: Image, isListElement: boolean): string => {
   const {
     first_post_user_name,
     first_post_channel_id,
@@ -17,18 +17,24 @@ const getSingleImageReply = (image: Image): string => {
   } = image;
   console.log("getSingleImageReply", { image });
   const link = `https://discord.com/channels/${image.guild_id}/${first_post_channel_id}/${first_post_message_id}`;
-  return `${count} raz${
-    count === 1 ? "" : "y"
-  }. Najpierw zapostował/a go ${first_post_user_name} ${formatDiff(
-    first_post_timestamp
-  )}: ${link}`;
+  const countText = count === 1 ? "raz" : `${count} razy`;
+  const timeText = formatDiff(first_post_timestamp);
+
+  if (isListElement)
+    return `- ${link} (${countText}). Najpierw zapostował/a go ${first_post_user_name} ${timeText}`;
+  return `${countText}. Najpierw zapostował/a go ${first_post_user_name} ${timeText}: ${link}`;
 };
 
-const getGroupedImagesReply = (title: string, images: Image[]): string => {
-  if (images.length === 0) return "";
-  const imageReplies = images.map(getSingleImageReply);
-  if (imageReplies.length === 1) return `${title}! ${imageReplies[0]}`;
-  return `${title}:\n${imageReplies.map(reply => `- ${reply}`).join("\n")}`;
+const getGroupedImagesReply = (
+  singularTitle: string,
+  multipleTitle: string,
+  images: Image[]
+): string => {
+  const imageReplies = images.map(image => getSingleImageReply(image, images.length > 1));
+
+  if (imageReplies.length === 0) return "";
+  if (imageReplies.length === 1) return `${singularTitle} ${imageReplies[0]}`;
+  return `${multipleTitle}:\n${imageReplies.join("\n")}`;
 };
 
 export const getReply = (
@@ -46,20 +52,23 @@ export const getReply = (
 
   const exactMessage = getGroupedImagesReply(
     "Widziałem **dokładnie ten** obrazek",
+    "",
     groupedImages.exact
   );
   const closeMessage = getGroupedImagesReply(
-    "Widziałem też **bardzo podobne** obrazki",
+    "Widziałem też **niemal identyczny** obrazek",
+    "Widziałem też **niemal identyczne** obrazki",
     groupedImages.close
   );
   const similarMessage = getGroupedImagesReply(
-    "I nawet takie, które są **całkiem podobne**",
+    "I nawet taki, które był **całkiem podobne**",
+    "I nawet takie, które były **całkiem podobne**",
     groupedImages.similar
   );
 
   return [salutation, exactMessage, closeMessage, similarMessage]
     .filter(text => text.length > 0)
-    .join("\n\n");
+    .join("\n");
 };
 
 export const getLinks = (message: Message): Link[] => {
