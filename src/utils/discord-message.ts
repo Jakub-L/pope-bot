@@ -1,35 +1,65 @@
 import { Message } from "discord.js";
 import { formatDiff } from "./datetime";
-import type { Image, Link } from "../types";
+import type { Image, Link, SimilarHashes } from "../types";
 import salutations from "../data/salutations.json";
 
 const randomSelection = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
 
-export const getReply = (image: Image, isExcluded: boolean): string => {
+const getSingleImageReply = (image: Image): string => {
   const {
-    count,
-    guild_id,
     first_post_user_name,
-    first_post_timestamp,
     first_post_channel_id,
     first_post_message_id,
-    last_post_user_name,
-    last_post_timestamp
+    first_post_timestamp,
+    count
   } = image;
-  if (isExcluded) {
-    return `${randomSelection(salutations)} Już to widzi-- a przepraszam, tobie wolno.`;
-  }
-
-  const link = `https://discord.com/channels/${guild_id}/${first_post_channel_id}/${first_post_message_id}`;
-  const salutation = randomSelection(salutations);
-  const countMessage = `Już to widziałem ${count} ${count === 1 ? "raz" : "razy"}!`;
-  const firstSeen = `Najpierw zapostował to ${first_post_user_name} ${formatDiff(
+  console.log("getSingleImageReply", { image });
+  const link = `https://discord.com/channels/${image.guild_id}/${first_post_channel_id}/${first_post_message_id}`;
+  return `- ${count} raz${
+    count === 1 ? "" : "y"
+  }. Najpierw zapostował to ${first_post_user_name} ${formatDiff(
     first_post_timestamp
   )} tutaj: ${link}`;
+};
 
-  return [salutation, countMessage, firstSeen].join(" ").trim();
+const getGroupedImagesReply = (title: string, images: Image[]): string => {
+  if (images.length === 0) return "";
+  const imageReplies = images.map(getSingleImageReply).join("\n");
+  return `${title}:\n${imageReplies}`;
+};
+
+export const getReply = (
+  similarImages: Record<string, Image>,
+  groupedHashes: SimilarHashes,
+  isExcluded: boolean
+): string => {
+  console.log("getReply", { similarImages, groupedHashes, isExcluded });
+  const salutation = randomSelection(salutations);
+  if (isExcluded) return `${salutation} Już to widzi-- a przepraszam, tobie wolno.`;
+
+  const groupedImages: Record<string, Image[]> = Object.entries(groupedHashes).reduce(
+    (acc, [key, hashes]) => ({ ...acc, [key]: hashes.map(hash => similarImages[hash]) }),
+    {}
+  );
+
+  const exactMessage = getGroupedImagesReply(
+    "Widziałem dokładnie ten obrazek!",
+    groupedImages.exact
+  );
+  const closeMessage = getGroupedImagesReply(
+    "Widziałem też bardzo podobne obrazki:",
+    groupedImages.close
+  );
+  const similarMessage = getGroupedImagesReply(
+    "I nawet kilka innych, które są podobne:",
+    groupedImages.similar
+  );
+
+  return [salutation, exactMessage, closeMessage, similarMessage]
+    .filter(text => text.length > 0)
+    .join("\n\n");
 };
 
 export const getLinks = (message: Message): Link[] => {
