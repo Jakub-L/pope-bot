@@ -3,6 +3,8 @@ import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
 
 import commands from "./commands";
 import { Database, getLinks, getReply, getUpdate, PhashIndex } from "./utils";
+import { ImageUpdate } from "./types";
+import { groupSimilarImages } from "./utils/phash-index";
 
 // TYPES
 type ClientWithCommands = Client & { commands: Collection<string, any> };
@@ -40,7 +42,7 @@ discordClient.once(Events.ClientReady, async () => {
   const phashes = await db.getImages(["phash"]);
   for (const image of phashes) searchIndex.add(image.phash);
   console.log(`Index initialised with ${phashes.length} images.`);
-  console.log("Bot ready.")
+  console.log("Bot ready.");
 });
 
 discordClient.on(Events.MessageCreate, async message => {
@@ -56,22 +58,36 @@ discordClient.on(Events.MessageCreate, async message => {
     }`
   );
 
+  const replies = [];
   const links = getLinks(message);
-  if (links.length === 0) return;
-
-  console.log(`\tFound ${links.length} links in the message.`);
-
+  const updates: Record<string, ImageUpdate> = {};
   for (const link of links) {
     const update = await getUpdate(link);
-    if (update) {
-      const image = await db.addImage(update);
-      console.log("\tAdded image to database");
-      if (image.count > 1) {
-        console.log(`\tImage already exists, count: ${image.count}`);
-        message.reply({ content: getReply(image, excludedUsers.has(message.author.id)) });
-      }
-    }
+    if (update) updates[update.phash] = update;
   }
+
+  if (Object.values(updates).length === 0) return;
+  console.log(`\tFound ${Object.values(updates).length} updates in the message.`);
+
+  for (const update of Object.values(updates)) {
+    const similarHashes = searchIndex.findSimilar(update.phash, 8);
+    if (similarHashes.length === 0) continue;
+
+    const groupedHashes = groupSimilarImages(similarHashes);
+    const similarImages = (
+      await db.getImages(["*"], {
+        phash: similarHashes.map(result => result.hex)
+      })
+    ).reduce((acc, image) => ({ ...acc, [image.phash]: image }), {});
+
+    replies.push(getReply(similarImages, groupedHashes, excludedUsers.has(message.author.id)));
+    searchIndex.add(update.phash);
+    await db.addImage(update);
+  }
+
+  message.reply({
+    content: replies.join("\n——————————————————\n")
+  });
 });
 
 discordClient.on(Events.InteractionCreate, async interaction => {
