@@ -17,17 +17,18 @@ const getSingleImageReply = (image: Image): string => {
   } = image;
   console.log("getSingleImageReply", { image });
   const link = `https://discord.com/channels/${image.guild_id}/${first_post_channel_id}/${first_post_message_id}`;
-  return `- ${count} raz${
+  return `${count} raz${
     count === 1 ? "" : "y"
-  }. Najpierw zapostował to ${first_post_user_name} ${formatDiff(
+  }. Najpierw zapostował/a go ${first_post_user_name} ${formatDiff(
     first_post_timestamp
-  )} tutaj: ${link}`;
+  )}: ${link}`;
 };
 
 const getGroupedImagesReply = (title: string, images: Image[]): string => {
   if (images.length === 0) return "";
-  const imageReplies = images.map(getSingleImageReply).join("\n");
-  return `${title}:\n${imageReplies}`;
+  const imageReplies = images.map(getSingleImageReply);
+  if (imageReplies.length === 1) return `${title}! ${imageReplies[0]}`;
+  return `${title}:\n${imageReplies.map(reply => `- ${reply}`).join("\n")}`;
 };
 
 export const getReply = (
@@ -35,7 +36,6 @@ export const getReply = (
   groupedHashes: SimilarHashes,
   isExcluded: boolean
 ): string => {
-  console.log("getReply", { similarImages, groupedHashes, isExcluded });
   const salutation = randomSelection(salutations);
   if (isExcluded) return `${salutation} Już to widzi-- a przepraszam, tobie wolno.`;
 
@@ -45,15 +45,15 @@ export const getReply = (
   );
 
   const exactMessage = getGroupedImagesReply(
-    "Widziałem dokładnie ten obrazek!",
+    "Widziałem **dokładnie ten** obrazek",
     groupedImages.exact
   );
   const closeMessage = getGroupedImagesReply(
-    "Widziałem też bardzo podobne obrazki:",
+    "Widziałem też **bardzo podobne** obrazki",
     groupedImages.close
   );
   const similarMessage = getGroupedImagesReply(
-    "I nawet kilka innych, które są podobne:",
+    "I nawet takie, które są **całkiem podobne**",
     groupedImages.similar
   );
 
