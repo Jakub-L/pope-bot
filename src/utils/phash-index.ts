@@ -1,3 +1,5 @@
+import { SimilarHashes } from "../types";
+
 type Tree = { [key: string]: Tree | boolean };
 type SearchNode = { path: string; target: Tree; diff: number };
 type SearchResult = { hex: string; diff: number };
@@ -118,3 +120,13 @@ export class PhashIndex {
     return count;
   }
 }
+
+export const groupSimilarImages = (results: SearchResult[]): SimilarHashes => {
+  const similar: SimilarHashes = { exact: [], close: [], similar: [] };
+  for (const result of results) {
+    if (result.diff === 0) similar.exact.push(result.hex);
+    else if (result.diff <= 4) similar.close.push(result.hex);
+    else similar.similar.push(result.hex);
+  }
+  return similar;
+};

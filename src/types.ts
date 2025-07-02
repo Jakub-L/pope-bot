@@ -23,3 +23,9 @@ export type ImageUpdate = {
 };
 
 export type Link = Omit<ImageUpdate, "phash"> & { url: string };
+
+export type SimilarHashes = {
+  exact: string[];
+  close: string[];
+  similar: string[];
+}
