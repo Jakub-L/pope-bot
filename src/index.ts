@@ -2,7 +2,7 @@ import "dotenv/config";
 import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
 
 import commands from "./commands";
-import { Database, getLinks, getReply, getUpdate } from "./utils";
+import { Database, getLinks, getReply, getUpdate, PhashIndex } from "./utils";
 
 // TYPES
 type ClientWithCommands = Client & { commands: Collection<string, any> };
@@ -18,6 +18,7 @@ const excludedGuilds = new Set(DISCORD_EXCLUDED_GUILD_IDS.split(",").map(id => i
 
 // INITIALISE CLIENTS
 const db = new Database();
+const searchIndex = new PhashIndex();
 const discordClient = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -35,6 +36,11 @@ for (const command of commands) {
 // HANDLERS
 discordClient.once(Events.ClientReady, async () => {
   console.log(`Logged in as ${discordClient.user?.tag}`);
+  console.log("Initialising index...");
+  const phashes = await db.getImages(["phash"]);
+  for (const image of phashes) searchIndex.add(image.phash);
+  console.log(`Index initialised with ${phashes.length} images.`);
+  console.log("Bot ready.")
 });
 
 discordClient.on(Events.MessageCreate, async message => {
