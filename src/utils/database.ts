@@ -26,7 +26,10 @@ export class Database {
     });
   }
 
-  async getImages(fields: string[] = ["*"], filter: Partial<Image> = {}): Promise<Image[]> {
+  async getImages(
+    fields: string[] = ["*"],
+    filter: Partial<Record<keyof Image, string | string[]>> = {}
+  ): Promise<Image[]> {
     const { whereClause, params } = this._buildWhereClause(filter);
     return ((
       await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
@@ -121,17 +124,23 @@ export class Database {
     });
   }
 
-  private _buildWhereClause(filter: Partial<Image>): { whereClause: string; params: any[] } {
+  private _buildWhereClause(filter: Partial<Record<keyof Image, string | string[]>>): {
+    whereClause: string;
+    params: any[];
+  } {
     const conditions: string[] = [];
     const params: any[] = [];
     for (const [key, value] of Object.entries(filter)) {
-      if (value !== undefined) {
+      if (value === null || value === undefined) continue;
+      if (Array.isArray(value) && value.length !== 0) {
+        conditions.push(`${key} IN (${value.map(v => `"${v}"`).join(", ")})`);
+      } else {
         conditions.push(`${key} = ?`);
         params.push(value);
       }
     }
     return {
-      whereClause: conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "",
+      whereClause: conditions.length > 0 ? `WHERE (${conditions.join(" AND ")})` : "",
       params
     };
   }
