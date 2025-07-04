@@ -15,7 +15,6 @@ const getSingleImageReply = (image: Image, isListElement: boolean): string => {
     first_post_timestamp,
     count
   } = image;
-  console.log("getSingleImageReply", { image });
   const link = `https://discord.com/channels/${image.guild_id}/${first_post_channel_id}/${first_post_message_id}`;
   const countText = count === 1 ? "raz" : `${count} razy`;
   const timeText = formatDiff(first_post_timestamp);
