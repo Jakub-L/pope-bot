@@ -85,9 +85,11 @@ discordClient.on(Events.MessageCreate, async message => {
     await db.addImage(update);
   }
 
-  message.reply({
-    content: replies.join("\n——————————————————\n")
-  });
+  if (replies.length > 0) {
+    message.reply({
+      content: replies.join("\n——————————————————\n")
+    });
+  }
 });
 
 discordClient.on(Events.InteractionCreate, async interaction => {
