@@ -18,5 +18,5 @@ export const formatUptime = (uptimeInMilliseconds: number): string => {
     minutes: Math.floor((uptimeInMilliseconds % MS_IN_HOUR) / MS_IN_MIN)
   };
 
-  return formatDuration(duration, { locale: pl });
+  return formatDuration(duration, { locale: pl, delimiter: ", " });
 };
