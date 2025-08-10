@@ -5,6 +5,7 @@ import commands from "./commands";
 import { Database, getLinks, getReply, getUpdate, PhashIndex } from "./utils";
 import { ImageUpdate } from "./types";
 import { groupSimilarImages } from "./utils/phash-index";
+import { log } from "./utils/log";
 
 // TYPES
 type ClientWithCommands = Client & { commands: Collection<string, any> };
@@ -37,21 +38,21 @@ for (const command of commands) {
 
 // HANDLERS
 discordClient.once(Events.ClientReady, async () => {
-  console.log(`Logged in as ${discordClient.user?.tag}`);
-  console.log("Initialising index...");
+  log(`Logged in as ${discordClient.user?.tag}`);
+  log("Initialising index...");
   const phashes = await db.getImages(["phash"]);
   for (const image of phashes) searchIndex.add(image.phash);
-  console.log(`Index initialised with ${phashes.length} images.`);
-  console.log("Bot ready.");
+  log(`Index initialised with ${phashes.length} images.`);
+  log("Bot ready.");
 });
 
 discordClient.on(Events.MessageCreate, async message => {
   if (message.author.bot) return;
   if (excludedGuilds.has(message.guildId ?? "")) return;
 
-  console.log(`\n${new Date().toISOString()} | Message from ${message.author.tag}`);
-  console.log(
-    `\t${
+  log(`Message from ${message.author.tag}`);
+  log(
+    `Message content: ${
       message.content.length > 50
         ? message.content.slice(0, 50) + "..."
         : message.content || "No content"
@@ -60,6 +61,7 @@ discordClient.on(Events.MessageCreate, async message => {
 
   const replies = [];
   const links = getLinks(message);
+  log(`Found ${Object.values(links).length} links in the message.`);
   const updates: Record<string, ImageUpdate> = {};
   for (const link of links) {
     const update = await getUpdate(link);
@@ -67,8 +69,9 @@ discordClient.on(Events.MessageCreate, async message => {
   }
 
   if (Object.values(updates).length === 0) return;
-  console.log(`\tFound ${Object.values(updates).length} updates in the message.`);
+  log(`Found ${Object.values(updates).length} updates in the message.`);
 
+  let similarImageCount = 0;
   for (const update of Object.values(updates)) {
     const similarHashes = searchIndex.findSimilar(update.phash, 8);
     await db.addImage(update);
@@ -81,9 +84,13 @@ discordClient.on(Events.MessageCreate, async message => {
       })
     ).reduce((acc, image) => ({ ...acc, [image.phash]: image }), {});
 
+    similarImageCount += Object.keys(similarImages).length;
+
     replies.push(getReply(similarImages, groupedHashes, excludedUsers.has(message.author.id)));
     searchIndex.add(update.phash);
   }
+
+  log(`Found ${similarImageCount} similar images.`);
 
   if (replies.length > 0) {
     message.reply({

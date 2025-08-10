@@ -3,6 +3,7 @@ import { Cloudflare } from "cloudflare";
 import { v4 as uuid } from "uuid";
 
 import type { Image, ImageUpdate } from "../types";
+import { log } from "./log";
 
 const {
   CLOUDFLARE_API_TOKEN,
@@ -44,7 +45,7 @@ export class Database {
   }
 
   async addImage(update: ImageUpdate): Promise<Image> {
-    return (
+    const response = (
       await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
         account_id: CLOUDFLARE_ACCOUNT_ID,
         sql: `
@@ -104,6 +105,8 @@ export class Database {
         ]
       })
     ).result[0].results?.[0] as Image;
+    log(`Image added/updated: ${JSON.stringify(response)}`);
+    return response;
   }
 
   async getLastImport(): Promise<number | null> {
