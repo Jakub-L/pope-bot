@@ -71,6 +71,7 @@ discordClient.on(Events.MessageCreate, async message => {
 
   for (const update of Object.values(updates)) {
     const similarHashes = searchIndex.findSimilar(update.phash, 8);
+    await db.addImage(update);
     if (similarHashes.length === 0) continue;
 
     const groupedHashes = groupSimilarImages(similarHashes);
@@ -82,7 +83,6 @@ discordClient.on(Events.MessageCreate, async message => {
 
     replies.push(getReply(similarImages, groupedHashes, excludedUsers.has(message.author.id)));
     searchIndex.add(update.phash);
-    await db.addImage(update);
   }
 
   if (replies.length > 0) {
