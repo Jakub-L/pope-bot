@@ -14,7 +14,8 @@ type ClientWithCommands = Client & { commands: Collection<string, any> };
 const {
   DISCORD_TOKEN,
   DISCORD_EXCLUDED_USER_IDS = "",
-  DISCORD_EXCLUDED_GUILD_IDS = ""
+  DISCORD_EXCLUDED_GUILD_IDS = "",
+  DISCORD_WELCOME_CHANNEL_ID = ""
 } = process.env;
 const excludedUsers = new Set(DISCORD_EXCLUDED_USER_IDS.split(",").map(id => id.trim()));
 const excludedGuilds = new Set(DISCORD_EXCLUDED_GUILD_IDS.split(",").map(id => id.trim()));
@@ -44,6 +45,12 @@ discordClient.once(Events.ClientReady, async () => {
   for (const image of phashes) searchIndex.add(image.phash);
   log(`Index initialised with ${phashes.length} images.`);
   log("Bot ready.");
+  if (DISCORD_EXCLUDED_GUILD_IDS) {
+    const channel = discordClient.channels.cache.get(DISCORD_WELCOME_CHANNEL_ID);
+    if (channel?.isTextBased() && channel?.isSendable()) {
+      channel.send(`:antypapaj: Lękajcie się! Indeksuję ${phashes.length} obrazków.`);
+    }
+  }
 });
 
 discordClient.on(Events.MessageCreate, async message => {
