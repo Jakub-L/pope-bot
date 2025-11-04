@@ -3,6 +3,9 @@ import { formatDiff } from "./datetime";
 import type { Image, Link, SimilarHashes } from "../types";
 import salutations from "../data/salutations.json";
 
+const isNonNullString = (value: string | null | undefined): value is string =>
+  typeof value === "string";
+
 const randomSelection = <T>(array: T[]): T => {
   return array[Math.floor(Math.random() * array.length)];
 };
@@ -75,19 +78,16 @@ export const getLinks = (message: Message): Link[] => {
 
   return Array.from(
     new Set([
-      ...embeds.map(embed => embed.url).filter(url => url !== null),
-      ...attachments.map(attachment => attachment.url).filter(Boolean),
+      ...embeds.map(embed => embed.url).filter(isNonNullString),
+      ...attachments.map(attachment => attachment.url).filter(isNonNullString),
       ...(content.match(/https?:\/\/[^\s]+/g) || [])
     ])
-  ).map(
-    url =>
-      ({
-        url,
-        guild_id: message.guildId,
-        user_name: author.globalName || author.username,
-        channel_id: message.channelId,
-        message_id: message.id,
-        timestamp: message.createdTimestamp
-      } as Link)
-  );
+  ).map(url => ({
+    url,
+    guild_id: message.guildId ?? "",
+    user_name: author.globalName || author.username,
+    channel_id: message.channelId,
+    message_id: message.id,
+    timestamp: message.createdTimestamp
+  }));
 };
