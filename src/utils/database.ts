@@ -136,7 +136,9 @@ export class Database {
     for (const [key, value] of Object.entries(filter)) {
       if (value === null || value === undefined) continue;
       if (Array.isArray(value) && value.length !== 0) {
-        conditions.push(`${key} IN (${value.map(v => `"${v}"`).join(", ")})`);
+        const placeholders = value.map(() => "?").join(", ");
+        conditions.push(`${key} IN (${placeholders})`);
+        params.push(...value);
       } else {
         conditions.push(`${key} = ?`);
         params.push(value);
