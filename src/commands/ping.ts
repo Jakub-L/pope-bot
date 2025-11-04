@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
+import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
 import { formatUptime } from "../utils";
 
@@ -11,7 +11,7 @@ const ping = {
 
     interaction.reply({
       content: `Papieżbot inwigiluje serwer! Czuwam już ${formatUptime(uptime)}.`,
-      flags: MessageFlags.Ephemeral
+      ephemeral: true
     });
   }
 };
