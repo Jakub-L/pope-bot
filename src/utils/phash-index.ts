@@ -5,7 +5,7 @@ type SearchNode = { path: string; target: Tree; diff: number };
 type SearchResult = { hex: string; diff: number };
 
 export class PhashIndex {
-  public _index: Tree = {};
+  private _index: Tree = {};
 
   /**
    * Adds a perceptual hash (phash) to the index.
