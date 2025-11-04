@@ -12,7 +12,10 @@
     "get-updates": "tsx scripts/get-updates.ts",
     "update-db": "tsx scripts/update-db.ts",
     "get-user-stats": "tsx scripts/get-user-stats.ts",
-    "get-images-from-discord": "npm run get-links && npm run get-updates && npm run update-db"
+    "get-images-from-discord": "npm run get-links && npm run get-updates && npm run update-db",
+    "lint": "eslint \"src/**/*.ts\" \"scripts/**/*.ts\"",
+    "format": "prettier --check \"**/*.{ts,js,json,md}\"",
+    "format:fix": "prettier --write \"**/*.{ts,js,json,md}\""
   },
   "repository": {
     "type": "git",
@@ -33,7 +36,12 @@
   "devDependencies": {
     "tsup": "^8.5.0",
     "tsx": "^4.19.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "eslint": "^9.13.0",
+    "@typescript-eslint/parser": "^8.8.1",
+    "@typescript-eslint/eslint-plugin": "^8.8.1",
+    "prettier": "^3.3.3",
+    "eslint-config-prettier": "^9.1.0"
   },
   "dependencies": {
     "cloudflare": "^4.3.0",
