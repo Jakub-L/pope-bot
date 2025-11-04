@@ -45,7 +45,7 @@ discordClient.once(Events.ClientReady, async () => {
   for (const image of phashes) searchIndex.add(image.phash);
   log(`Index initialised with ${phashes.length} images.`);
   log("Bot ready.");
-  if (DISCORD_EXCLUDED_GUILD_IDS) {
+  if (DISCORD_WELCOME_CHANNEL_ID) {
     const channel = discordClient.channels.cache.get(DISCORD_WELCOME_CHANNEL_ID);
     if (channel?.isTextBased() && channel?.isSendable()) {
       channel.send(`:antypapaj: Lękajcie się! Wróciłem po restarcie. Indeksuję ${phashes.length} obrazków.`);
