@@ -64,8 +64,8 @@ export const getReply = (options: GetReplyOptions): string => {
     groupedImages.exact
   );
   const closeMessage = getGroupedImagesReply(
-    `Widziałem${exactMessage.length > 0 ? "też " : ""} **niemal identyczny** obrazek`,
-    `Widziałem${exactMessage.length > 0 ? "też " : ""} **niemal identyczne** obrazki`,
+    `Widziałem${exactMessage.length > 0 ? " też" : ""} **niemal identyczny** obrazek`,
+    `Widziałem${exactMessage.length > 0 ? " też" : ""} **niemal identyczne** obrazki`,
     groupedImages.close
   );
   const similarMessage = getGroupedImagesReply(
