@@ -1,3 +1,4 @@
-import ping from "./ping";
+import ping from './ping';
+import get from './get';
 
-export default [ping];
+export default [ping, get];
