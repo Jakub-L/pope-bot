@@ -43,6 +43,7 @@ interface GetReplyOptions {
   similarImages: Record<string, Image>;
   groupedHashes: SimilarHashes;
   authorId: string;
+  authorName: string;
   excludedUsers: Set<string>;
 }
 export const getReply = (options: GetReplyOptions): string => {
