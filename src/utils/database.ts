@@ -134,6 +134,31 @@ export class Database {
     return popeGets ? (popeGets as PopeGet) : null;
   }
 
+  async recordFirstGet(userId: string, userName: string, timestamp: number): Promise<void> {
+    await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
+      account_id: CLOUDFLARE_ACCOUNT_ID,
+      sql: `
+        INSERT INTO gets (user_id, user_name, last_get_timestamp, total_gets, get_streak) VALUES (?, ?, ?, 1, 1)
+      `,
+      params: [userId, userName, String(timestamp)]
+    });
+  }
+
+  async recordGet(userId: string, timestamp: number, newStreak: number): Promise<void> {
+    await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
+      account_id: CLOUDFLARE_ACCOUNT_ID,
+      sql: `
+        UPDATE gets
+        SET
+          last_get_timestamp = ?,
+          total_gets = total_gets + 1,
+          get_streak = ?
+        WHERE user_id = ?
+      `,
+      params: [String(timestamp), String(newStreak), userId]
+    });
+  }
+
   private _buildWhereClause(filter: Partial<Record<keyof Image, string | string[]>>): {
     whereClause: string;
     params: any[];
