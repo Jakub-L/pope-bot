@@ -39,12 +39,17 @@ const getGroupedImagesReply = (
   return `${multipleTitle}:\n${imageReplies.join("\n")}`;
 };
 
-export const getReply = (
-  similarImages: Record<string, Image>,
-  groupedHashes: SimilarHashes,
-  isExcluded: boolean
-): string => {
+interface GetReplyOptions {
+  similarImages: Record<string, Image>;
+  groupedHashes: SimilarHashes;
+  authorId: string;
+  excludedUsers: Set<string>;
+}
+export const getReply = (options: GetReplyOptions): string => {
+  const { similarImages, groupedHashes, authorId, excludedUsers } = options;
   const salutation = randomSelection(salutations);
+  const isExcluded = excludedUsers.has(authorId);
+
   if (isExcluded) return `${salutation} Już to widzi-- a przepraszam, tobie wolno.`;
 
   const groupedImages: Record<string, Image[]> = Object.entries(groupedHashes).reduce(

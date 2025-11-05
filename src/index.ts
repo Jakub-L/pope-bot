@@ -95,7 +95,9 @@ discordClient.on(Events.MessageCreate, async message => {
 
     similarImageCount += Object.keys(similarImages).length;
 
-    replies.push(getReply(similarImages, groupedHashes, excludedUsers.has(message.author.id)));
+    replies.push(
+      getReply({ similarImages, groupedHashes, excludedUsers, authorId: message.author.id })
+    );
     searchIndex.add(update.phash);
   }
 
