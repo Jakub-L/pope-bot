@@ -29,3 +29,11 @@ export type SimilarHashes = {
   close: string[];
   similar: string[];
 }
+
+export type PopeGet = {
+  user_id: string;
+  user_name: string;
+  total_gets: number;
+  get_streak: number;
+  last_get_timestamp: number;
+}

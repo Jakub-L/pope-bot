@@ -2,14 +2,10 @@ import "dotenv/config";
 import { Cloudflare } from "cloudflare";
 import { v4 as uuid } from "uuid";
 
-import type { Image, ImageUpdate } from "../types";
+import type { Image, ImageUpdate, PopeGet } from "../types";
 import { log } from "./log";
 
-const {
-  CLOUDFLARE_API_TOKEN,
-  CLOUDFLARE_ACCOUNT_ID = "",
-  CLOUDFLARE_DB_ID = ""
-} = process.env;
+const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID = "", CLOUDFLARE_DB_ID = "" } = process.env;
 
 /** Database connection class for managing Cloudflare D1 database operations. */
 export class Database {
@@ -125,6 +121,17 @@ export class Database {
       sql: `INSERT INTO imports (id, timestamp) VALUES (?, ?)`,
       params: [uuid(), String(timestamp)]
     });
+  }
+
+  async getPopeGet(userId: string): Promise<PopeGet | null> {
+    const popeGets = (
+      await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
+        account_id: CLOUDFLARE_ACCOUNT_ID,
+        sql: `SELECT * FROM gets WHERE user_id = ?`,
+        params: [userId]
+      })
+    ).result[0].results?.[0];
+    return popeGets ? (popeGets as PopeGet) : null;
   }
 
   private _buildWhereClause(filter: Partial<Record<keyof Image, string | string[]>>): {
