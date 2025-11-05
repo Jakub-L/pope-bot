@@ -69,7 +69,7 @@ export const getReply = (options: GetReplyOptions): string => {
     groupedImages.close
   );
   const similarMessage = getGroupedImagesReply(
-    `${exactMessage.length > 0 || closeMessage.length > 0 ? "I nawet taki" : "Widziałem obrazek"}, które był **całkiem podobne**`,
+    `${exactMessage.length > 0 || closeMessage.length > 0 ? "I nawet taki" : "Widziałem obrazek"}, który był **całkiem podobne**`,
     `${exactMessage.length > 0 || closeMessage.length > 0 ? "I nawet taki" : "Widziałem obrazki"}, które były **całkiem podobne**`,
     groupedImages.similar
   );
