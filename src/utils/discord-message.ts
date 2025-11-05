@@ -32,7 +32,7 @@ const getGroupedImagesReply = (
   multipleTitle: string,
   images: Image[]
 ): string => {
-  const imageReplies = images.map((image) => getSingleImageReply(image, images.length > 1));
+  const imageReplies = images.map(image => getSingleImageReply(image, images.length > 1));
 
   if (imageReplies.length === 0) return "";
   if (imageReplies.length === 1) return `${singularTitle} ${imageReplies[0]}`;
@@ -54,7 +54,7 @@ export const getReply = (options: GetReplyOptions): string => {
   if (isExcluded) return `${salutation} Już to widzi-- a przepraszam, tobie wolno.`;
 
   const groupedImages: Record<string, Image[]> = Object.entries(groupedHashes).reduce(
-    (acc, [key, hashes]) => ({ ...acc, [key]: hashes.map((hash) => similarImages[hash]) }),
+    (acc, [key, hashes]) => ({ ...acc, [key]: hashes.map(hash => similarImages[hash]) }),
     {}
   );
 
@@ -75,7 +75,7 @@ export const getReply = (options: GetReplyOptions): string => {
   );
 
   return [salutation, exactMessage, closeMessage, similarMessage]
-    .filter((text) => text.length > 0)
+    .filter(text => text.length > 0)
     .join("\n");
 };
 
@@ -84,11 +84,11 @@ export const getLinks = (message: Message): Link[] => {
 
   return Array.from(
     new Set([
-      ...embeds.map((embed) => embed.url).filter(isNonNullString),
-      ...attachments.map((attachment) => attachment.url).filter(isNonNullString),
+      ...embeds.map(embed => embed.url).filter(isNonNullString),
+      ...attachments.map(attachment => attachment.url).filter(isNonNullString),
       ...(content.match(/https?:\/\/[^\s]+/g) || [])
     ])
-  ).map((url) => ({
+  ).map(url => ({
     url,
     guild_id: message.guildId ?? "",
     user_name: author.globalName || author.username,
