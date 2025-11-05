@@ -48,7 +48,9 @@ discordClient.once(Events.ClientReady, async () => {
   if (DISCORD_WELCOME_CHANNEL_ID) {
     const channel = discordClient.channels.cache.get(DISCORD_WELCOME_CHANNEL_ID);
     if (channel?.isTextBased() && channel?.isSendable()) {
-      channel.send(`:antypapaj: Lękajcie się! Wróciłem po restarcie. Indeksuję ${phashes.length} obrazków.`);
+      channel.send(
+        `<:antypapaj:885248251274592356> Lękajcie się! Wróciłem po restarcie. Indeksuję ${phashes.length} obrazków.`
+      );
     }
   }
 });
