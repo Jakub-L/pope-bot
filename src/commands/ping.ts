@@ -1,12 +1,12 @@
 import { ChatInputCommandInteraction, MessageFlags, SlashCommandBuilder } from "discord.js";
 
-import { formatUptime } from "../utils";
+import { Database, formatUptime } from "../utils";
 
 const ping = {
   data: new SlashCommandBuilder()
     .setName("ping")
     .setDescription("Sprawdza, czy Papieżbot jest aktywny."),
-  async execute(interaction: ChatInputCommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction, _db: Database) {
     const { uptime } = interaction.client;
 
     interaction.reply({

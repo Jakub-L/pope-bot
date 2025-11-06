@@ -119,7 +119,7 @@ discordClient.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
   const command = (interaction.client as ClientWithCommands).commands.get(interaction.commandName);
   if (!command) return;
-  await command.execute(interaction);
+  await command.execute(interaction, db);
 });
 
 discordClient.login(DISCORD_TOKEN);
