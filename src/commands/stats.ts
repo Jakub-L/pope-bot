@@ -16,7 +16,7 @@ const mapStatToMessage = (title: string, stats: PopeGet[]) => {
 const stats = {
   data: new SlashCommandBuilder()
     .setName("wyniki")
-    .setDescription("Wypisuje aktualne wyniki papież-getó∑."),
+    .setDescription("Wypisuje aktualne wyniki papież-getów."),
   async execute(interaction: ChatInputCommandInteraction, db: Database) {
     const streaks = await db.getStats("get_streak");
     const totals = await db.getStats("total_gets");
