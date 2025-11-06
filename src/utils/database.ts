@@ -159,6 +159,16 @@ export class Database {
     });
   }
 
+  async getStats(order: "total_gets" | "get_streak" = "total_gets"): Promise<PopeGet[]> {
+    const results = (
+      await this._client.d1.database.query(CLOUDFLARE_DB_ID, {
+        account_id: CLOUDFLARE_ACCOUNT_ID,
+        sql: `SELECT * FROM gets ORDER BY ${order} DESC LIMIT 5`
+      })
+    ).result[0].results;
+    return results ? (results as PopeGet[]) : [];
+  }
+
   private _buildWhereClause(filter: Partial<Record<keyof Image, string | string[]>>): {
     whereClause: string;
     params: any[];
