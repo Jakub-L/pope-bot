@@ -100,8 +100,7 @@ discordClient.on(Events.MessageCreate, async message => {
         similarImages,
         groupedHashes,
         excludedUsers,
-        authorId: message.author.id,
-        authorName: message.author.globalName || message.author.username
+        authorId: message.author.id
       })
     );
     searchIndex.add(update.phash);
@@ -118,9 +117,7 @@ discordClient.on(Events.MessageCreate, async message => {
 
 discordClient.on(Events.InteractionCreate, async interaction => {
   if (!interaction.isChatInputCommand()) return;
-  const command = (interaction.client as ClientWithCommands).commands.get(
-    interaction.commandName
-  );
+  const command = (interaction.client as ClientWithCommands).commands.get(interaction.commandName);
   if (!command) return;
   await command.execute(interaction);
 });

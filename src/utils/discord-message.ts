@@ -43,7 +43,6 @@ interface GetReplyOptions {
   similarImages: Record<string, Image>;
   groupedHashes: SimilarHashes;
   authorId: string;
-  authorName: string;
   excludedUsers: Set<string>;
 }
 export const getReply = (options: GetReplyOptions): string => {
@@ -51,7 +50,10 @@ export const getReply = (options: GetReplyOptions): string => {
   const salutation = randomSelection(salutations);
   const isExcluded = excludedUsers.has(authorId);
 
-  if (isExcluded) return `${salutation} Już to widzi-- a przepraszam, tobie wolno.`;
+  const excludedMessage = isExcluded
+    ? " Już to widzi-- a przepraszam, tobie wolno. Przypominam:"
+    : "";
+  const excludedMessagEnd = isExcluded ? "Ale powtarzam, tobie wolno." : "";
 
   const groupedImages: Record<string, Image[]> = Object.entries(groupedHashes).reduce(
     (acc, [key, hashes]) => ({ ...acc, [key]: hashes.map(hash => similarImages[hash]) }),
@@ -74,7 +76,14 @@ export const getReply = (options: GetReplyOptions): string => {
     groupedImages.similar
   );
 
-  return [salutation, exactMessage, closeMessage, similarMessage]
+  return [
+    salutation,
+    excludedMessage,
+    exactMessage,
+    closeMessage,
+    similarMessage,
+    excludedMessagEnd
+  ]
     .filter(text => text.length > 0)
     .join("\n");
 };
