@@ -8,7 +8,7 @@ const mapStatToMessage = (title: string, stats: PopeGet[]) => {
   return [
     `## ${title}:`,
     ...stats.map(
-      (stat, index) => `**${index + 1}.** ${stat.user_name} - ${stat.get_streak} getów z rzędu`
+      (stat, index) => `**${index + 1}.** ${stat.user_name} - ${stat.get_streak} getów`
     )
   ].join("\n");
 };
