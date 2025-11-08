@@ -6,6 +6,7 @@ import { Database, getLinks, getReply, getUpdate, PhashIndex } from "./utils";
 import { ImageUpdate } from "./types";
 import { groupSimilarImages } from "./utils/phash-index";
 import { log } from "./utils/log";
+import { isMessagePopeGet, popeGet } from "./utils/pope-get";
 
 // TYPES
 type ClientWithCommands = Client & { commands: Collection<string, any> };
@@ -68,6 +69,12 @@ discordClient.on(Events.MessageCreate, async message => {
     }`
   );
 
+  // Pope get check
+  if (isMessagePopeGet(message)) {
+    await popeGet(message, db);
+  }
+
+  // Image repost check
   const replies = [];
   const links = getLinks(message);
   log(`Found ${Object.values(links).length} links in the message.`);

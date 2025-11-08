@@ -1,14 +1,32 @@
-import { ChatInputCommandInteraction, MessageFlags } from "discord.js";
+import "dotenv/config";
+
+import {
+  ChatInputCommandInteraction,
+  Message,
+  MessageFlags,
+  OmitPartialGroupDMChannel
+} from "discord.js";
 import { TZDate } from "@date-fns/tz";
 import { isSameDay } from "date-fns";
 
 import { Database } from "../utils";
 
+// CONSTANTS & GLOBAL VARIABLES
+const { DISCORD_POPEGET_CHANNEL_ID = "" } = process.env;
 const TARGET_HOURS = 21;
 const TARGET_MINUTES = 37;
 
-export const popeGet = async (interaction: ChatInputCommandInteraction, db: Database) => {
-  const { createdTimestamp, user } = interaction;
+export const isMessagePopeGet = (message: OmitPartialGroupDMChannel<Message<boolean>>) => {
+  if (message.channelId !== DISCORD_POPEGET_CHANNEL_ID) return false;
+  return /^(pap(ie(ż|z)|aj)\s)*get$/gim.test(message.content);
+};
+
+export const popeGet = async (
+  interaction: ChatInputCommandInteraction | OmitPartialGroupDMChannel<Message<boolean>>,
+  db: Database
+) => {
+  const user = interaction instanceof Message ? interaction.author : interaction.user;
+  const { createdTimestamp } = interaction;
 
   const currentGetTime = new TZDate(createdTimestamp, "Europe/Warsaw");
   const currentGetHours = currentGetTime.getHours();
@@ -16,10 +34,12 @@ export const popeGet = async (interaction: ChatInputCommandInteraction, db: Data
 
   // Not correct time
   if (currentGetHours !== TARGET_HOURS || currentGetMinutes !== TARGET_MINUTES) {
-    interaction.reply({
-      content: `Nie ta pora! Papież pozostaje nieuchwytny!`,
-      flags: MessageFlags.Ephemeral
-    });
+    if (!(interaction instanceof Message)) {
+      interaction.reply({
+        content: `Nie ta pora! Papież pozostaje nieuchwytny!`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
     return;
   }
 
@@ -34,10 +54,12 @@ export const popeGet = async (interaction: ChatInputCommandInteraction, db: Data
   // Already got today
   const lastGetTime = new TZDate(getData.last_get_timestamp, "Europe/Warsaw");
   if (isSameDay(lastGetTime, currentGetTime)) {
-    interaction.reply({
-      content: "Doceniam zapał, ale papież został już chwycony dzisiaj! Spróbuj jutro!",
-      flags: MessageFlags.Ephemeral
-    });
+    if (!(interaction instanceof Message)) {
+      interaction.reply({
+        content: "Doceniam zapał, ale papież został już chwycony dzisiaj! Spróbuj jutro!",
+        flags: MessageFlags.Ephemeral
+      });
+    }
     return;
   }
 
@@ -52,9 +74,14 @@ export const popeGet = async (interaction: ChatInputCommandInteraction, db: Data
 
   if (newStreak % 5 === 0) messages.unshift(`## ${newStreak} get z rzędu!`);
   if (newCount % 10 === 0) messages.unshift(`## ${newCount} papież-get!`);
+  const content = messages.join("\n");
 
-  interaction.reply({
-    content: messages.join("\n"),
-    flags: messages.length > 1 ? MessageFlags.Ephemeral : undefined
-  });
+  if (interaction instanceof Message) {
+    interaction.reply({ content });
+  } else {
+    interaction.reply({
+      content,
+      flags: messages.length > 1 ? MessageFlags.Ephemeral : undefined
+    });
+  }
 };
