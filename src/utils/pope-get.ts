@@ -7,7 +7,7 @@ import {
   OmitPartialGroupDMChannel
 } from "discord.js";
 import { TZDate } from "@date-fns/tz";
-import { isSameDay } from "date-fns";
+import { isSameDay, isYesterday } from "date-fns";
 
 import { Database } from "../utils";
 
@@ -64,7 +64,8 @@ export const popeGet = async (
   }
 
   // Update get
-  const newStreak = getData.get_streak + 1;
+
+  const newStreak = isYesterday(lastGetTime) ? getData.get_streak + 1 : 1;
   const newCount = getData.total_gets + 1;
   await db.recordGet(user.id, createdTimestamp, newStreak);
 
