@@ -82,7 +82,7 @@ export const popeGet = async (
   } else {
     interaction.reply({
       content,
-      flags: messages.length > 1 ? MessageFlags.Ephemeral : undefined
+      flags: messages.length > 1 ? undefined : MessageFlags.Ephemeral
     });
   }
 };
