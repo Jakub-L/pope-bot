@@ -76,6 +76,9 @@ discordClient.on(Events.MessageCreate, async message => {
   const links = getLinks(message);
   log(`Found ${Object.values(links).length} links in the message.`);
   await checkReposts({ message, links, db, searchIndex, excludedUsers });
+
+  // Replace links with ones with embeddable links
+  await makeLinksEmbeddable({message, links}});
 });
 
 discordClient.on(Events.InteractionCreate, async interaction => {
