@@ -1,8 +1,13 @@
+import "dotenv/config";
+
 import { formatDate, formatISO } from "date-fns";
 import fs from "fs";
 import path from "path";
 
+const { IGNORE_LOGGING = "false" } = process.env;
+
 export const log = (message: string): void => {
+  if (IGNORE_LOGGING === "true") return;
   const logPath = path.join(__dirname, `../logs/${formatDate(new Date(), "yyyy-MM-dd")}.log`);
   if (!fs.existsSync(logPath)) {
     fs.mkdirSync(path.dirname(logPath), { recursive: true });
