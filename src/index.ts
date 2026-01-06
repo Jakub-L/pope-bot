@@ -5,6 +5,7 @@ import commands from "./commands";
 import { Database, getLinks, PhashIndex, checkReposts } from "./utils";
 import { log } from "./utils/log";
 import { isMessagePopeGet, popeGet } from "./utils/pope-get";
+import { makeLinksEmbeddable } from "./utils/embeds";
 
 // TYPES
 type ClientWithCommands = Client & { commands: Collection<string, any> };
@@ -78,7 +79,7 @@ discordClient.on(Events.MessageCreate, async message => {
   await checkReposts({ message, links, db, searchIndex, excludedUsers });
 
   // Replace links with ones with embeddable links
-  await makeLinksEmbeddable({message, links}});
+  await makeLinksEmbeddable({message, links});
 });
 
 discordClient.on(Events.InteractionCreate, async interaction => {
