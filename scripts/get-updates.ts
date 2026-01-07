@@ -14,7 +14,7 @@ const processLink = async (
       stats.validUpdates++;
       return update;
     }
-  } catch (error) {
+  } catch {
     stats.errorCount++;
   }
   return null;

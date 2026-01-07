@@ -2,7 +2,6 @@ import { existsSync, mkdirSync, appendFileSync, writeFileSync } from "fs";
 import "dotenv/config";
 import { ChannelType, Client, Events, GatewayIntentBits, TextChannel } from "discord.js";
 
-import { Link } from "../src/types";
 
 type UserStats = {
   userId: string;

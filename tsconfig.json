@@ -2,7 +2,6 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "commonjs",
-    "rootDir": "./src",
     "outDir": "./dist",
     "removeComments": true,
     "resolveJsonModule": true,
@@ -11,5 +10,6 @@
     "strict": true,
     "strictNullChecks": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/**/*", "scripts/**/*"]
 }
