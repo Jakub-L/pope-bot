@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsup src/index.ts --minify --format esm",
+    "build": "tsup src/index.ts --minify --format esm --shims",
     "deploy-commands": "tsx scripts/deploy-commands.ts",
     "get-links": "tsx scripts/get-links.ts",
     "get-updates": "tsx scripts/get-updates.ts",
