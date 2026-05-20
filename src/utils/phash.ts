@@ -2,7 +2,15 @@ import phash from "sharp-phash";
 import { ImageUpdate, Link } from "../types";
 
 export const getUpdate = async (link: Link): Promise<ImageUpdate | null> => {
-  const response = await fetch(link.url, { method: "GET" });
+  let response: globalThis.Response | null = null;
+
+  try {
+    response = await fetch(link.url, { method: "GET" });
+  } catch (e) {
+    console.error(`Error fetching link: ${link.url}`, e);
+    return null;
+  }
+
   const isImage = response.headers.get("content-type")?.startsWith("image/");
   if (!isImage) return null;
 
