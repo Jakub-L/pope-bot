@@ -3,7 +3,6 @@ import { Cloudflare } from "cloudflare";
 import { v4 as uuid } from "uuid";
 
 import type { Image, ImageUpdate, PopeGet } from "../types";
-import { log } from "./log";
 
 const { CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID = "", CLOUDFLARE_DB_ID = "" } = process.env;
 
@@ -101,7 +100,6 @@ export class Database {
         ]
       })
     ).result[0].results?.[0] as Image;
-    log(`Image added/updated: ${JSON.stringify(response)}`);
     return response;
   }
 

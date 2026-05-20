@@ -3,7 +3,6 @@ import { Message, OmitPartialGroupDMChannel } from "discord.js";
 import { ImageUpdate, Link } from "../types";
 import { Database } from "./database";
 import { getReply } from "./discord-message";
-import { log } from "./log";
 import { getUpdate } from "./phash";
 import { groupSimilarImages, PhashIndex } from "./phash-index";
 
@@ -31,9 +30,7 @@ export const checkReposts = async ({
   }
 
   if (Object.values(updates).length === 0) return;
-  log(`Found ${Object.values(updates).length} updates in the message.`);
 
-  let similarImageCount = 0;
   for (const update of Object.values(updates)) {
     const similarHashes = searchIndex.findSimilar(update.phash, 8);
     await db.addImage(update);
@@ -46,8 +43,6 @@ export const checkReposts = async ({
       })
     ).reduce((acc, image) => ({ ...acc, [image.phash]: image }), {});
 
-    similarImageCount += Object.keys(similarImages).length;
-
     replies.push(
       getReply({
         similarImages,
@@ -59,12 +54,9 @@ export const checkReposts = async ({
     searchIndex.add(update.phash);
   }
 
-  log(`Found ${similarImageCount} similar images.`);
-
   if (replies.length > 0) {
     message.reply({
       content: replies.join("\n——————————————————\n")
     });
   }
 };
-

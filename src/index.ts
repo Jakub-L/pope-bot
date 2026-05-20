@@ -3,9 +3,7 @@ import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
 
 import commands from "./commands";
 import { Database, getLinks, PhashIndex, checkReposts } from "./utils";
-import { log } from "./utils/log";
 import { isMessagePopeGet, popeGet } from "./utils/pope-get";
-import { makeLinksEmbeddable } from "./utils/embeds";
 
 // TYPES
 type ClientWithCommands = Client & { commands: Collection<string, any> };
@@ -39,12 +37,8 @@ for (const command of commands) {
 
 // HANDLERS
 discordClient.once(Events.ClientReady, async () => {
-  log(`Logged in as ${discordClient.user?.tag}`);
-  log("Initialising index...");
   const phashes = await db.getImages(["phash"]);
   for (const image of phashes) searchIndex.add(image.phash);
-  log(`Index initialised with ${phashes.length} images.`);
-  log("Bot ready.");
   if (DISCORD_WELCOME_CHANNEL_ID) {
     const channel = discordClient.channels.cache.get(DISCORD_WELCOME_CHANNEL_ID);
     if (channel?.isTextBased() && channel?.isSendable()) {
@@ -59,15 +53,6 @@ discordClient.on(Events.MessageCreate, async message => {
   if (message.author.bot) return;
   if (excludedGuilds.has(message.guildId ?? "")) return;
 
-  log(`Message from ${message.author.tag}`);
-  log(
-    `Message content: ${
-      message.content.length > 50
-        ? message.content.slice(0, 50) + "..."
-        : message.content || "No content"
-    }`
-  );
-
   // Pope get check
   if (isMessagePopeGet(message)) {
     await popeGet(message, db);
@@ -75,7 +60,6 @@ discordClient.on(Events.MessageCreate, async message => {
 
   // Image repost check
   const links = getLinks(message);
-  log(`Found ${Object.values(links).length} links in the message.`);
   await checkReposts({ message, links, db, searchIndex, excludedUsers });
 });
 

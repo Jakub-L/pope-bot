@@ -77,7 +77,6 @@ Zobacz `.env.example`, aby poznać wszystkie wymagane i opcjonalne zmienne środ
 - `DISCORD_WELCOME_CHANNEL_ID` - kanał do ogłoszeń o restartach bota
 - `DISCORD_EXCLUDED_USER_IDS` - użytkownicy którym wolno repostować
 - `DISCORD_EXCLUDED_GUILD_IDS` - serwery do ignorowania
-- `IGNORE_LOGGING` - ustaw na "true", aby wyłączyć logowanie do pliku
 
 ## Licencja
 
