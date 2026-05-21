@@ -1,37 +1,44 @@
 import { SimilarHashes } from "../types";
 
-type Tree = { [key: string]: Tree | boolean };
-type SearchNode = { path: string; target: Tree; diff: number };
 type SearchResult = { hex: string; diff: number };
 
+const DEFAULT_CAPACITY = 64_000;
+
 export class PhashIndex {
-  private _index: Tree = {};
+  private _hashes: BigUint64Array;
+  private _size = 0;
+  private _capacity: number;
+
+  constructor(initialCapacity = DEFAULT_CAPACITY) {
+    this._capacity = initialCapacity;
+    this._hashes = new BigUint64Array(initialCapacity);
+  }
 
   /**
    * Adds a perceptual hash (phash) to the index.
    * @param phashHex - The perceptual hash in hexadecimal format (8 bytes).
-   * @throws Will throw an error if the phashHex is not a valid hexadecimal string
-   *         or if it does not have exactly 8 bytes.
+   * @throws Will throw an error if the phash is not exactly 8 bytes long.
    */
   public add(phashHex: string): void {
-    const bytes = phashHex.match(/.{2}/g);
-    if (!bytes) throw new Error(`Invalid phash bytes: ${phashHex}`);
-    if (bytes.length !== 8) throw new Error(`Invalid phash length: ${phashHex}`);
-    this._deepSet(bytes, true);
+    if (phashHex.length !== 16) throw new Error(`Invalid phash length: ${phashHex}`);
+    if (this._size >= this._capacity) this._grow();
+    this._hashes[this._size++] = BigInt(`0x${phashHex}`);
   }
 
   /**
    * Removes a perceptual hash (phash) from the index.
    * @param phashHex - The perceptual hash in hexadecimal format (8 bytes).
-   * @throws Will throw an error if the phashHex is not a valid hexadecimal string
-   *         or if it does not have exactly 8 bytes.
+   * @throws Will throw an error if the phashHex is not exactly 8 bytes.
    */
   public remove(phashHex: string): void {
-    const bytes = phashHex.match(/.{2}/g);
-    if (!bytes) throw new Error(`Invalid phash bytes: ${phashHex}`);
-    if (bytes.length !== 8) throw new Error(`Invalid phash length: ${phashHex}`);
-    this._deepDelete(bytes);
-    this._prune();
+    if (phashHex.length !== 16) throw new Error(`Invalid phash length: ${phashHex}`);
+    const target = BigInt(`0x${phashHex}`);
+    for (let i = 0; i < this._size; i++) {
+      if (this._hashes[i] === target) {
+        this._hashes[i] = this._hashes[--this._size];
+        return;
+      }
+    }
   }
 
   /**
@@ -42,82 +49,41 @@ export class PhashIndex {
    * @throws Will throw an error if the phashHex does not have exactly 8 bytes.
    */
   public findSimilar(phashHex: string, threshold: number): SearchResult[] {
-    if (phashHex.length !== 16) throw new Error(`Invalid phash length: ${phashHex}`);
-
+    const target = BigInt(`0x${phashHex}`);
     const results: SearchResult[] = [];
-    const queue: SearchNode[] = [{ path: "", target: this._index, diff: 0 }];
-    while (queue.length > 0) {
-      const { path, target, diff } = queue.shift()!;
-      const pathLength = path.length;
-      for (const [key, value] of Object.entries(target)) {
-        const newDiff = diff + this._bitDiff(key, phashHex.slice(pathLength, pathLength + 2));
-        const newPath = `${path}${key}`;
-        if (newDiff > threshold) continue;
-        if (typeof value === "boolean") results.push({ hex: newPath, diff: newDiff });
-        else if (typeof value === "object") {
-          queue.push({ path: newPath, target: value as Tree, diff: newDiff });
-        }
+    for (let i = 0; i < this._size; i++) {
+      const diff = this._countSetBits(this._hashes[i] ^ target, threshold);
+      if (diff <= threshold) {
+        results.push({ hex: this._hashes[i].toString(16).padStart(16, "0"), diff });
       }
     }
     return results;
   }
 
   /**
-   * Sets a deeply nested value in an object given a path of keys.
-   * @param path - An array of keys representing the path to the value to be set.
-   * @param value - The value to be set.
-   * @param target - The object in which the value should be set.
-   * @returns void
+   * Counts the number of set bits (1s) in a 64-bit integer using Kernighan's algorithm.
+   * @param n - The 64-bit integer to count the set bits of.
+   * @param threshold - The maximum allowed difference in bits between the phash and the stored
+   *                    phashes.
+   * @returns The number of set bits in the integer or Number.MAX_SAFE_INTEGER if the difference is
+   *          greater than the threshold.
    */
-  private _deepSet(path: string[], value: boolean, target: Tree = this._index): void {
-    const key = path[0];
-    if (!(key in target)) target[key] = {};
-    if (path.length === 1) target[key] = value;
-    else this._deepSet(path.slice(1), value, target[key] as Tree);
-  }
-
-  /**
-   * Recursively deletes a property from an object based on a given path.
-   * @param path - An array of keys representing the path to the value to be deleted.
-   * @param target - The object from which the property should be deleted.
-   * @returns void
-   */
-  private _deepDelete(path: string[], target: Tree = this._index): void {
-    const key = path[0];
-    if (!(key in target)) return;
-    if (path.length === 1) delete target[key];
-    else this._deepDelete(path.slice(1), target[key] as Tree);
-  }
-
-  /**
-   * Recursively prunes empty objects from the index tree.
-   * If an object becomes empty after pruning, it is deleted.
-   * @param target - The object to prune, defaults to the root index.
-   * @returns void
-   */
-  private _prune(target: Tree = this._index): void {
-    for (const [key, value] of Object.entries(target)) {
-      if (typeof value === "object") {
-        this._prune(value as Tree);
-        if (Object.keys(value).length === 0) delete target[key];
-      }
-    }
-  }
-
-  /**
-   * Finds the number of bits that differ between two hexadecimal numbers.
-   * @param hexA - First hexadecimal number (as string)
-   * @param hexB - Second hexadecimal number (as string)
-   * @returns The number of differing bits between the two hexadecimal numbers.
-   */
-  private _bitDiff(hexA: string, hexB: string): number {
-    let diff = parseInt(hexA, 16) ^ parseInt(hexB, 16);
+  private _countSetBits(n: bigint, threshold: number): number {
     let count = 0;
-    while (diff) {
-      count += diff & 1;
-      diff >>= 1;
+    while (n) {
+      n &= n - 1n;
+      count++;
+      if (count > threshold) return Number.MAX_SAFE_INTEGER;
     }
     return count;
+  }
+
+  /** Doubles the capacity of the index. */
+  private _grow(): void {
+    this._capacity *= 2;
+    const newArr = new BigUint64Array(this._capacity);
+    newArr.set(this._hashes);
+    this._hashes = newArr;
   }
 }
 
