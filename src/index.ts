@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { Client, Collection, Events, GatewayIntentBits } from "discord.js";
+import { Client, Collection, Events, GatewayIntentBits, Options } from "discord.js";
 
 import commands from "./commands";
 import { Database, getLinks, PhashIndex, checkReposts } from "./utils";
@@ -26,7 +26,20 @@ const discordClient = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessages
-  ]
+  ],
+  makeCache: Options.cacheWithLimits({
+    MessageManager: 50,
+    GuildMemberManager: 50,
+    PresenceManager: 0,
+    ReactionManager: 0,
+    GuildEmojiManager: 0,
+    VoiceStateManager: 0,
+    ThreadManager: 0
+  }),
+  sweepers: {
+    messages: { interval: 300, lifetime: 600 },
+    users: { interval: 300, filter: () => u => !u.bot }
+  }
 }) as ClientWithCommands;
 
 // REGISTER COMMANDS
