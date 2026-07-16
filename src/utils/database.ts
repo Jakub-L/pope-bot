@@ -25,7 +25,7 @@ export class Database {
   async getImages(
     fields: string[] = ["*"],
     filter: Partial<Record<keyof Image, string | string[]>> = {}
-  ): Promise<Image[]> {
+  ): Promise<Image[] | null> {
     const { whereClause, params } = this._buildWhereClause(filter);
     const response = await this._query(() =>
       this._client.d1.database.query(CLOUDFLARE_DB_ID, {
@@ -37,7 +37,7 @@ export class Database {
         params
       })
     );
-    return (response?.result[0].results ?? []) as Image[];
+    return response ? ((response.result[0].results ?? []) as Image[]) : null;
   }
 
   async addImage(update: ImageUpdate): Promise<Image | null> {
@@ -115,17 +115,18 @@ export class Database {
     return imports ? (imports as { timestamp: number }).timestamp : null;
   }
 
-  async recordImport(timestamp: number): Promise<void> {
-    await this._query(() =>
+  async recordImport(timestamp: number): Promise<boolean> {
+    const response = await this._query(() =>
       this._client.d1.database.query(CLOUDFLARE_DB_ID, {
         account_id: CLOUDFLARE_ACCOUNT_ID,
         sql: `INSERT INTO imports (id, timestamp) VALUES (?, ?)`,
         params: [uuid(), String(timestamp)]
       })
     );
+    return response !== null;
   }
 
-  async getPopeGet(userId: string): Promise<PopeGet | null> {
+  async getPopeGet(userId: string): Promise<PopeGet | null | undefined> {
     const response = await this._query(() =>
       this._client.d1.database.query(CLOUDFLARE_DB_ID, {
         account_id: CLOUDFLARE_ACCOUNT_ID,
@@ -133,12 +134,13 @@ export class Database {
         params: [userId]
       })
     );
-    const popeGets = response?.result[0].results?.[0];
+    if (response === null) return undefined;
+    const popeGets = response.result[0].results?.[0];
     return popeGets ? (popeGets as PopeGet) : null;
   }
 
-  async recordFirstGet(userId: string, userName: string, timestamp: number): Promise<void> {
-    await this._query(() =>
+  async recordFirstGet(userId: string, userName: string, timestamp: number): Promise<boolean> {
+    const response = await this._query(() =>
       this._client.d1.database.query(CLOUDFLARE_DB_ID, {
         account_id: CLOUDFLARE_ACCOUNT_ID,
         sql: `
@@ -147,10 +149,11 @@ export class Database {
         params: [userId, userName, String(timestamp)]
       })
     );
+    return response !== null;
   }
 
-  async recordGet(userId: string, timestamp: number, newStreak: number): Promise<void> {
-    await this._query(() =>
+  async recordGet(userId: string, timestamp: number, newStreak: number): Promise<boolean> {
+    const response = await this._query(() =>
       this._client.d1.database.query(CLOUDFLARE_DB_ID, {
         account_id: CLOUDFLARE_ACCOUNT_ID,
         sql: `
@@ -164,16 +167,17 @@ export class Database {
         params: [String(timestamp), String(newStreak), userId]
       })
     );
+    return response !== null;
   }
 
-  async getStats(order: "total_gets" | "get_streak" = "total_gets"): Promise<PopeGet[]> {
+  async getStats(order: "total_gets" | "get_streak" = "total_gets"): Promise<PopeGet[] | null> {
     const response = await this._query(() =>
       this._client.d1.database.query(CLOUDFLARE_DB_ID, {
         account_id: CLOUDFLARE_ACCOUNT_ID,
         sql: `SELECT * FROM gets ORDER BY ${order} DESC LIMIT 5`
       })
     );
-    return (response?.result[0].results ?? []) as PopeGet[];
+    return response ? ((response.result[0].results ?? []) as PopeGet[]) : null;
   }
 
   private _buildWhereClause(filter: Partial<Record<keyof Image, string | string[]>>): {
