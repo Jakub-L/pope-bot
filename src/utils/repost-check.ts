@@ -33,15 +33,34 @@ export const checkReposts = async ({
 
   for (const update of Object.values(updates)) {
     const similarHashes = searchIndex.findSimilar(update.phash, 8);
-    await db.addImage(update);
+    const image = await db.addImage(update);
+    if (!image) {
+      await message.reply({
+        content:
+          "Coś się popsuło i nie dałem rady zapisać obrazka w mojej bazie danych. Jeśli to był repost, to tym razem uszło ci na sucho!"
+      });
+      continue;
+    }
+
+    searchIndex.add(update.phash);
     if (similarHashes.length === 0) continue;
 
     const groupedHashes = groupSimilarImages(similarHashes);
-    const similarImages = (
-      await db.getImages(["*"], {
-        phash: similarHashes.map(result => result.hex)
-      })
-    ).reduce((acc, image) => ({ ...acc, [image.phash]: image }), {});
+    const fetchedImages = await db.getImages(["*"], {
+      phash: similarHashes.map(result => result.hex)
+    });
+    if (!fetchedImages || fetchedImages.length === 0) {
+      await message.reply({
+        content:
+          "Znalazłem reposty, ale nie udało mi się pobrać ich z bazy danych. Uszło ci na sucho, szczęściarzu!"
+      });
+      searchIndex.add(update.phash);
+      continue;
+    }
+    const similarImages = fetchedImages.reduce(
+      (acc, image) => ({ ...acc, [image.phash]: image }),
+      {}
+    );
 
     replies.push(
       getReply({
@@ -51,7 +70,6 @@ export const checkReposts = async ({
         authorId: message.author.id
       })
     );
-    searchIndex.add(update.phash);
   }
 
   if (replies.length > 0) {

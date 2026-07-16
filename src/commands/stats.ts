@@ -22,6 +22,13 @@ const stats = {
   async execute(interaction: ChatInputCommandInteraction, db: Database) {
     const streaks = await db.getStats("get_streak");
     const totals = await db.getStats("total_gets");
+    if (!streaks || !totals) {
+      interaction.reply({
+        content: "Przykro mi, w moich papieskich obwodach wystąpił błąd. Spróbuj jeszcze raz.",
+        flags: MessageFlags.Ephemeral
+      });
+      return;
+    }
 
     const totalMessage = mapStatToMessage("Top 5 papież-getów", totals, "total_gets");
     const streakMessage = mapStatToMessage("Top 5 getów z rzędu", streaks, "get_streak");

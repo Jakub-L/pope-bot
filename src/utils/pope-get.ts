@@ -11,6 +11,9 @@ import { isSameDay, isYesterday } from "date-fns";
 
 import { Database } from "../utils";
 
+// TYPES
+type PopeInteraction = ChatInputCommandInteraction | OmitPartialGroupDMChannel<Message<boolean>>;
+
 // CONSTANTS & GLOBAL VARIABLES
 const { DISCORD_POPEGET_CHANNEL_ID = "" } = process.env;
 const TARGET_HOURS = 21;
@@ -21,10 +24,14 @@ export const isMessagePopeGet = (message: OmitPartialGroupDMChannel<Message<bool
   return /^(pap(ie(ż|z)|aj)\s)*get$/gim.test(message.content);
 };
 
-export const popeGet = async (
-  interaction: ChatInputCommandInteraction | OmitPartialGroupDMChannel<Message<boolean>>,
-  db: Database
-) => {
+const replyWithDatabaseError = (interaction: PopeInteraction, message: string) => {
+  const content = `Coś się popsuło i nie było mnie słychać. ${message}`;
+  return interaction instanceof Message
+    ? interaction.reply({ content })
+    : interaction.reply({ content, flags: MessageFlags.Ephemeral });
+};
+
+export const popeGet = async (interaction: PopeInteraction, db: Database) => {
   const user = interaction instanceof Message ? interaction.author : interaction.user;
   const { createdTimestamp } = interaction;
 
@@ -45,8 +52,28 @@ export const popeGet = async (
 
   // First get
   const getData = await db.getPopeGet(user.id);
+  if (getData === undefined) {
+    await replyWithDatabaseError(
+      interaction,
+      "Nie udało mi się połączyć z bazą watykańską. Spróbuj jeszcze raz."
+    );
+    return;
+  }
+
   if (!getData) {
-    await db.recordFirstGet(user.id, user.globalName || user.username, createdTimestamp);
+    const recordedSuccessfully = await db.recordFirstGet(
+      user.id,
+      user.globalName || user.username,
+      createdTimestamp
+    );
+    if (!recordedSuccessfully) {
+      await replyWithDatabaseError(
+        interaction,
+        "Nie dałem rady zarejestrować twego pierwszego geta. Spróbuj jeszcze raz."
+      );
+      return;
+    }
+
     interaction.reply({ content: "Gratuluję twojego pierwszego papież-geta! Oby tak dalej!" });
     return;
   }
@@ -64,10 +91,16 @@ export const popeGet = async (
   }
 
   // Update get
-
   const newStreak = isYesterday(lastGetTime) ? getData.get_streak + 1 : 1;
   const newCount = getData.total_gets + 1;
-  await db.recordGet(user.id, createdTimestamp, newStreak);
+  const recordedSuccessfully = await db.recordGet(user.id, createdTimestamp, newStreak);
+  if (!recordedSuccessfully) {
+    await replyWithDatabaseError(
+      interaction,
+      "Nie dałem rady zarejestrować twego geta. Spróbuj jeszcze raz."
+    );
+    return;
+  }
 
   let messages = [
     `Gratulacje! Papież został chwycony! To już twój ${newCount} papież-get i ${newStreak} get z rzędu!`
