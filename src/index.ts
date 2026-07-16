@@ -49,8 +49,14 @@ for (const command of commands) {
 }
 
 // HANDLERS
-discordClient.once(Events.ClientReady, async () => {
+const indexImages = async () => {
   const phashes = await db.getImages(["phash"]);
+  if (!phashes) {
+    console.error("Image index initialisation failed. Retrying in 30 seconds.");
+    globalThis.setTimeout(() => void indexImages(), 30_000);
+    return;
+  }
+
   for (const image of phashes) searchIndex.add(image.phash);
   if (DISCORD_WELCOME_CHANNEL_ID) {
     const channel = discordClient.channels.cache.get(DISCORD_WELCOME_CHANNEL_ID);
@@ -60,6 +66,10 @@ discordClient.once(Events.ClientReady, async () => {
       );
     }
   }
+};
+
+discordClient.once(Events.ClientReady, () => {
+  void indexImages();
 });
 
 discordClient.on(Events.MessageCreate, async message => {
