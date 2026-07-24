@@ -20,12 +20,15 @@ const stats = {
     .setName("wyniki")
     .setDescription("Wypisuje aktualne wyniki papież-getów."),
   async execute(interaction: ChatInputCommandInteraction, db: Database) {
-    const streaks = await db.getStats("get_streak");
-    const totals = await db.getStats("total_gets");
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+    const [streaks, totals] = await Promise.all([
+      db.getStats("get_streak"),
+      db.getStats("total_gets")
+    ]);
     if (!streaks || !totals) {
-      interaction.reply({
+      await interaction.editReply({
         content: "Przykro mi, w moich papieskich obwodach wystąpił błąd. Spróbuj jeszcze raz.",
-        flags: MessageFlags.Ephemeral
       });
       return;
     }
@@ -34,17 +37,11 @@ const stats = {
     const streakMessage = mapStatToMessage("Top 5 getów z rzędu", streaks, "get_streak");
 
     if (!streakMessage && !totalMessage) {
-      interaction.reply({
-        content: "Brak getów! Może uda ci się to zmienić?",
-        flags: MessageFlags.Ephemeral
-      });
+      await interaction.editReply("Brak getów! Może uda ci się to zmienić?");
       return;
     }
 
-    interaction.reply({
-      content: [totalMessage, streakMessage].filter(Boolean).join("\n\n"),
-      flags: MessageFlags.Ephemeral
-    });
+    await interaction.editReply([totalMessage, streakMessage].filter(Boolean).join("\n\n"));
   }
 };
 
