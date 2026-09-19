@@ -180,7 +180,7 @@ export class Database {
         sql: `WITH ranked AS (
                 SELECT *, RANK() OVER (
                     ORDER BY ${order} DESC,
-                    CASE WHEN user_name = ${username} THEN 0 ELSE 1 END,
+                    CASE WHEN user_name = '${username}' THEN 0 ELSE 1 END,
                     user_name
                   ) AS position
                 FROM gets
@@ -190,7 +190,7 @@ export class Database {
               FROM ranked
               WHERE
                 position <= 5
-                OR user_name = ${username}
+                OR user_name = '${username}'
               ORDER BY position;`
       })
     );
