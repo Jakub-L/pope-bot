@@ -170,11 +170,28 @@ export class Database {
     return response !== null;
   }
 
-  async getStats(order: "total_gets" | "get_streak" = "total_gets"): Promise<PopeGet[] | null> {
+  async getStats(
+    order: "total_gets" | "get_streak" = "total_gets",
+    username: string
+  ): Promise<(PopeGet & { position: number })[] | null> {
     const response = await this._query(() =>
       this._client.d1.database.query(CLOUDFLARE_DB_ID, {
         account_id: CLOUDFLARE_ACCOUNT_ID,
-        sql: `SELECT * FROM gets ORDER BY ${order} DESC LIMIT 5`
+        sql: `WITH ranked AS (
+                SELECT *, RANK() OVER (
+                    ORDER BY ${order} DESC,
+                    CASE WHEN user_name = ${username} THEN 0 ELSE 1 END,
+                    user_name
+                  ) AS position
+                FROM gets
+              )
+              SELECT
+              *
+              FROM ranked
+              WHERE
+                position <= 5
+                OR user_name = ${username}
+              ORDER BY position;`
       })
     );
     return response ? ((response.result[0].results ?? []) as PopeGet[]) : null;

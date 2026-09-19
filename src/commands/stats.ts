@@ -3,15 +3,26 @@ import { PopeGet } from "../types";
 
 import { Database } from "../utils";
 
+const pluralise = (n: number): string => {
+  const finalDigit = n % 10;
+  const penultimateDigit = Math.floor((n % 100) / 10);
+  if (n === 1) return "get";
+  if (penultimateDigit !== 1 && [2, 3, 4].includes(finalDigit)) return "gety";
+  return "getów";
+};
+
 const mapStatToMessage = (
   title: string,
-  stats: PopeGet[],
+  stats: (PopeGet & { position: number })[],
   statField: "total_gets" | "get_streak"
 ) => {
   if (stats.length === 0) return "";
   return [
     `## ${title}:`,
-    ...stats.map((stat, index) => `**${index + 1}.** ${stat.user_name} - ${stat[statField]} getów`)
+    ...stats.map(
+      stat =>
+        `**${stat.position}.** ${stat.user_name} - ${stat[statField]} ${pluralise(stat[statField])}`
+    )
   ].join("\n");
 };
 
@@ -21,14 +32,15 @@ const stats = {
     .setDescription("Wypisuje aktualne wyniki papież-getów."),
   async execute(interaction: ChatInputCommandInteraction, db: Database) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    const { username } = interaction.user;
 
     const [streaks, totals] = await Promise.all([
-      db.getStats("get_streak"),
-      db.getStats("total_gets")
+      db.getStats("get_streak", username),
+      db.getStats("total_gets", username)
     ]);
     if (!streaks || !totals) {
       await interaction.editReply({
-        content: "Przykro mi, w moich papieskich obwodach wystąpił błąd. Spróbuj jeszcze raz.",
+        content: "Przykro mi, w moich papieskich obwodach wystąpił błąd. Spróbuj jeszcze raz."
       });
       return;
     }
