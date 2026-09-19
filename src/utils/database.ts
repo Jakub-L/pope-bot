@@ -194,7 +194,9 @@ export class Database {
               ORDER BY position;`
       })
     );
-    return response ? ((response.result[0].results ?? []) as PopeGet[]) : null;
+    return response
+      ? ((response.result[0].results ?? []) as (PopeGet & { position: number })[])
+      : null;
   }
 
   private _buildWhereClause(filter: Partial<Record<keyof Image, string | string[]>>): {
