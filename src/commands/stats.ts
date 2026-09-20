@@ -32,11 +32,11 @@ const stats = {
     .setDescription("Wypisuje aktualne wyniki papież-getów."),
   async execute(interaction: ChatInputCommandInteraction, db: Database) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-    const { username } = interaction.user;
+    const { id } = interaction.user;
 
     const [streaks, totals] = await Promise.all([
-      db.getStats("get_streak", username),
-      db.getStats("total_gets", username)
+      db.getStats("get_streak", id),
+      db.getStats("total_gets", id)
     ]);
     if (!streaks || !totals) {
       await interaction.editReply({
